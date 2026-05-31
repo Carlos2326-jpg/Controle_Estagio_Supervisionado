@@ -24,7 +24,7 @@ class CreateAlertaPrazoTable extends Migration
       $table->boolean('lido')->default(false);
       $table->timestamp('data_leitura')->nullable();
 
-      $table->foreign('id_usuario_destino')->references('id_usuario')->on('usuario');
+      $table->foreign('id_usuario_destino')->references('id')->on('users');
       $table->index(['tipo_alerta', 'lido']);
       $table->index('data_vencimento');
       $table->index('id_referencia');

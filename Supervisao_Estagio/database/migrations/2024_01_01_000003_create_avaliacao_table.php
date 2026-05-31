@@ -23,7 +23,7 @@ class CreateAvaliacaoTable extends Migration
       $table->timestamp('data_avaliacao')->useCurrent();
 
       $table->foreign('id_contrato')->references('id_contrato')->on('contrato_estagio');
-      $table->foreign('id_avaliador')->references('id_usuario')->on('usuario');
+      $table->foreign('id_avaliador')->references('id')->on('users');
       $table->index('tipo_avaliador');
       $table->index('situacao_final');
     });

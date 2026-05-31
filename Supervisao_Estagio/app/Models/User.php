@@ -10,54 +10,44 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    protected $table = 'usuario';
-    protected $primaryKey = 'id_usuario';
-
     protected $fillable = [
-        'nome',
+        'name',
         'email',
-        'senha_hash',
+        'password',
         'perfil',
         'ativo',
-        'data_criacao',
-        'ultimo_acesso'
+        'ultimo_acesso',
     ];
 
     protected $hidden = [
-        'senha_hash',
+        'password',
     ];
 
     protected $casts = [
         'ativo' => 'boolean',
-        'data_criacao' => 'datetime',
-        'ultimo_acesso' => 'datetime'
+        'ultimo_acesso' => 'datetime',
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
     ];
 
-    // Mutator para senha
-    public function setSenhaHashAttribute($value)
-    {
-        $this->attributes['senha_hash'] = bcrypt($value);
-    }
-
-    // Relacionamentos
     public function aluno()
     {
-        return $this->hasOne(Aluno::class, 'id_usuario', 'id_usuario');
+        return $this->hasOne(Aluno::class);
     }
 
     public function coordenador()
     {
-        return $this->hasOne(Coordenador::class, 'id_usuario', 'id_usuario');
+        return $this->hasOne(Coordenador::class);
     }
 
     public function supervisor()
     {
-        return $this->hasOne(SupervisorEmpresa::class, 'id_usuario', 'id_usuario');
+        return $this->hasOne(SupervisorEmpresa::class);
     }
 
     public function alertas()
     {
-        return $this->hasMany(AlertaPrazo::class, 'id_usuario_destino', 'id_usuario');
+        return $this->hasMany(AlertaPrazo::class, 'id_usuario_destino');
     }
 
     public function alertasNaoLidos()
@@ -65,20 +55,19 @@ class User extends Authenticatable
         return $this->alertas()->whereNull('data_leitura')->orderBy('data_geracao', 'desc');
     }
 
-    // Métodos auxiliares
     public function isAluno()
     {
-        return $this->perfil === 'ALUNO' && $this->aluno;
+        return $this->perfil === 'aluno';
     }
 
     public function isCoordenador()
     {
-        return $this->perfil === 'COORDENADOR' && $this->coordenador;
+        return $this->perfil === 'coordenador';
     }
 
     public function isSupervisor()
     {
-        return $this->perfil === 'SUPERVISOR' && $this->supervisor;
+        return $this->perfil === 'supervisor';
     }
 
     public function getContratos()
@@ -102,7 +91,7 @@ class User extends Authenticatable
         if ($this->isAluno()) {
             return $this->aluno->avaliacoes;
         } elseif ($this->isCoordenador() || $this->isSupervisor()) {
-            return Avaliacao::where('id_avaliador', $this->id_usuario)->get();
+            return Avaliacao::where('id_avaliador', $this->id)->get();
         }
         return collect();
     }

@@ -21,7 +21,7 @@ class CreateContratoEstagioTable extends Migration
       $table->string('arquivo_contrato', 255)->nullable();
       $table->timestamps();
 
-      $table->foreign('id_solicitacao')->references('id_solicitacao')->on('solicitacao_estagio');
+      //$table->foreign('id_solicitacao')->references('id_solicitacao')->on('solicitacao_estagio');
       $table->index('status');
       $table->index('data_fim');
     });
