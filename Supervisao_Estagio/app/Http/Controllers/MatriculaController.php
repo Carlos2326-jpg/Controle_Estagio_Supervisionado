@@ -19,7 +19,6 @@ class MatriculaController extends Controller
         $alunos = Aluno::with(['user'])
             ->where('curso_id', $curso->id)
             ->when($request->situacao_estagio, fn($q) => $q->where('situacao_estagio', $request->situacao_estagio))
-            ->when($request->periodo, fn($q) => $q->where('periodo_atual', $request->periodo))
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -83,10 +82,9 @@ class MatriculaController extends Controller
     {
         $alunos = Aluno::with(['user'])
             ->where('curso_id', $curso->id)
-            ->whereNotNull('data_prevista_conclusao')
-            ->whereDate('data_prevista_conclusao', '<=', now()->addDays(30))
-            ->whereRaw('horas_cumpridas < ?', [$curso->carga_horaria_estagio])
-            ->orderBy('data_prevista_conclusao', 'asc')
+            ->where('ativo', true)
+            ->whereRaw('carga_horaria_cumprida < ?', [$curso->carga_horaria_estagio])
+            ->orderBy('created_at', 'asc')
             ->paginate(20);
 
         return response()->json($alunos);
