@@ -10,32 +10,6 @@ Route::get('/', function () {
 });
 /*
 |--------------------------------------------------------------------------
-| RF01 – GERENCIAR DADOS DO ALUNO
-|--------------------------------------------------------------------------
-*/
-Route::prefix('alunos')->group(function () {
-    Route::get('/', [AlunoController::class, 'index']);
-    Route::post('/', [AlunoController::class, 'store']);
-    Route::get('/{aluno}', [AlunoController::class, 'show']);
-    Route::put('/{aluno}', [AlunoController::class, 'update']);
-    Route::patch('/{aluno}/inativar', [AlunoController::class, 'inativar']);
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF02 – CONSULTAR SITUAÇÃO DE ESTÁGIO
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/{aluno}/situacao-estagio', [AlunoController::class, 'situacaoEstagio']);
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF03 – SOLICITAR ESTÁGIO
-    |--------------------------------------------------------------------------
-    */
-    Route::post('/{aluno}/solicitacoes', [AlunoController::class, 'solicitarEstagio']);
-});
-/*
-|--------------------------------------------------------------------------
 | RF01, RF02, RF03 – GERENCIAR COORDENADORES
 |--------------------------------------------------------------------------
 */
