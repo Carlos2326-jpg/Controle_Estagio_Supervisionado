@@ -41,6 +41,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/limpar-antigos', [AlertaController::class, 'limparAntigos'])->name('limpar-antigos')->middleware('can:admin');
     });
 
+
+});
+
     // ==================== ALUNOS ====================
     Route::resource('alunos', AlunoController::class);
 
@@ -52,4 +55,3 @@ Route::middleware(['auth'])->group(function () {
 
     // ==================== DOCUMENTOS ====================
     Route::resource('documentos', DocumentoController::class)->except(['edit', 'update']);
-});
