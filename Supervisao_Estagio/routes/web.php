@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CoordenadorController;
 use App\Http\Controllers\MatriculaController;
 use App\Http\Controllers\RelatorioController;
+use App\Http\Controllers\CursoController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -96,3 +97,21 @@ Route::prefix('coordenadores/{coordenador}/relatorios')->group(function () {
     Route::get('/exportar-pdf', [RelatorioController::class, 'exportarPdf']);
 });
 
+/*
+|--------------------------------------------------------------------------
+| RF31 – GERENCIAR CURSOS
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('cursos')->group(function () {
+
+    Route::get('/', [CursoController::class, 'index']);
+
+    Route::post('/', [CursoController::class, 'store']);
+
+    Route::get('/{curso}', [CursoController::class, 'show']);
+
+    Route::put('/{curso}', [CursoController::class, 'update']);
+
+    Route::patch('/{curso}/inativar', [CursoController::class, 'inativar']);
+});
