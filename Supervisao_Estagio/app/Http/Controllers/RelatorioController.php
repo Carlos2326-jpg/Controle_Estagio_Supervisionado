@@ -2,113 +2,90 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Coordenador;
-use App\Services\CoordenadorService;
+use App\Models\Curso;
+use App\Services\CursoService;
 use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf;
 
-class RelatorioController extends Controller
+class CursoController extends Controller
 {
-    protected $service;
+    public function __construct(
+        protected CursoService $service
+    ) {}
 
-    public function __construct(CoordenadorService $service)
+    // Listar cursos
+    public function index(Request $request)
     {
-        $this->service = $service;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF07 – RELATÓRIO DE ALUNOS POR SITUAÇÃO
-    |--------------------------------------------------------------------------
-    */
-
-    public function alunos(Request $request, Coordenador $coordenador)
-    {
-        $dados = $this->service->gerarRelatorio($coordenador, 'alunos', $request->only([
-            'status_estagio',
-            'data_inicio',
-            'data_fim'
-        ]));
-
-        return response()->json($dados);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF08 – RELATÓRIO DE CONTRATOS ATIVOS
-    |--------------------------------------------------------------------------
-    */
-
-    public function contratos(Request $request, Coordenador $coordenador)
-    {
-        $dados = $this->service->gerarRelatorio($coordenador, 'contratos', $request->only([
-            'data_inicio',
-            'data_fim'
-        ]));
-
-        return response()->json($dados);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF09 – RELATÓRIO DE HORAS CUMPRIDAS
-    |--------------------------------------------------------------------------
-    */
-
-    public function horas(Request $request, Coordenador $coordenador)
-    {
-        $dados = $this->service->gerarRelatorio($coordenador, 'horas', $request->only([
-            'data_inicio',
-            'data_fim'
-        ]));
-
-        return response()->json($dados);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF10 – RELATÓRIO DE AVALIAÇÕES
-    |--------------------------------------------------------------------------
-    */
-
-    public function avaliacoes(Request $request, Coordenador $coordenador)
-    {
-        $dados = $this->service->gerarRelatorio($coordenador, 'avaliacoes', $request->only([
-            'tipo',
-            'conceito',
-            'data_inicio',
-            'data_fim'
-        ]));
-
-        return response()->json($dados);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF11 – EXPORTAR RELATÓRIO EM PDF
-    |--------------------------------------------------------------------------
-    */
-
-    public function exportarPdf(Request $request, Coordenador $coordenador)
-    {
-        $request->validate([
-            'tipo' => 'required|in:alunos,contratos,horas,avaliacoes',
-        ]);
-
-        $dados = $this->service->gerarRelatorio(
-            $coordenador,
-            $request->tipo,
-            $request->except('tipo')
+        $cursos = $this->service->listar(
+            $request->only(['ativo', 'nome'])
         );
 
-        $pdf = Pdf::loadView('relatorios.pdf', [
-            'dados'       => $dados,
-            'tipo'        => $request->tipo,
-            'coordenador' => $coordenador,
-            'curso'       => $coordenador->curso,
-            'gerado_em'   => now()->format('d/m/Y H:i'),
+        return view('cursos.index', compact('cursos'));
+    }
+
+    // Formulário de cadastro
+    public function create()
+    {
+        return view('cursos.create');
+    }
+
+    // Salvar curso
+    public function store(Request $request)
+    {
+        $request->validate([
+            'nome' => 'required|string|max:150',
+            'codigo' => 'required|string|max:20|unique:cursos,codigo',
+            'carga_horaria_estagio' => 'required|integer|min:1',
+            'modalidade' => 'required|in:Presencial,EAD,Hibrido',
         ]);
 
-        return $pdf->download("relatorio_{$request->tipo}_{now()->format('Y-m-d')}.pdf");
+        $this->service->cadastrar($request->all());
+
+        return redirect()
+            ->route('cursos.index')
+            ->with('success', 'Curso cadastrado com sucesso!');
+    }
+
+    // Detalhes
+    public function show(Curso $curso)
+    {
+        $curso = $this->service->detalhes($curso);
+
+        return view('cursos.show', compact('curso'));
+    }
+
+    // Formulário de edição
+    public function edit(Curso $curso)
+    {
+        return view('cursos.edit', compact('curso'));
+    }
+
+    // Atualizar
+    public function update(Request $request, Curso $curso)
+    {
+        $request->validate([
+            'nome' => 'required|string|max:150',
+            'codigo' => 'required|string|max:20|unique:cursos,codigo,' . $curso->id,
+            'carga_horaria_estagio' => 'required|integer|min:1',
+            'modalidade' => 'required|in:Presencial,EAD,Hibrido',
+        ]);
+
+        $this->service->atualizar(
+            $curso,
+            $request->all()
+        );
+
+        return redirect()
+            ->route('cursos.index')
+            ->with('success', 'Curso atualizado com sucesso!');
+    }
+
+    // Inativar
+    public function inativar(Curso $curso)
+    {
+        $this->service->inativar($curso);
+
+        return redirect()
+            ->route('cursos.index')
+            ->with('success', 'Curso inativado com sucesso!');
     }
 }

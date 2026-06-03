@@ -18,155 +18,145 @@ class InstituicaoController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | RF38 – GERENCIAR INSTITUIÇÃO (Funções Básicas)
+    | RF38 – GERENCIAR INSTITUIÇÃO
     |--------------------------------------------------------------------------
     */
 
-    // RF38 – Listar / consultar instituições com filtros
     public function index(Request $request)
     {
-        return response()->json(
-            $this->service->listar(
-                $request->only(['ativa', 'cidade', 'estado', 'busca'])
-            )
+        $instituicoes = $this->service->listar(
+            $request->only(['ativa', 'cidade', 'estado', 'busca'])
         );
+
+        return view('instituicoes.index', compact('instituicoes'));
     }
 
-    // RF38 – Cadastrar nova instituição
+    public function create()
+    {
+        return view('instituicoes.create');
+    }
+
     public function store(StoreInstituicaoRequest $request)
     {
-        return response()->json(
-            $this->service->cadastrar($request->validated()),
-            201
-        );
+        $this->service->cadastrar($request->validated());
+
+        return redirect()->route('instituicoes.index')
+            ->with('success', 'Instituição cadastrada com sucesso.');
     }
 
-    // RF38 – Exibir ficha completa da instituição (Função de Saída)
     public function show(Instituicao $instituicao)
     {
-        return response()->json(
-            $this->service->detalhes($instituicao)
-        );
+        $detalhes = $this->service->detalhes($instituicao);
+
+        return view('instituicoes.show', compact('detalhes', 'instituicao'));
     }
 
-    // RF38 – Atualizar dados cadastrais da instituição
+    public function edit(Instituicao $instituicao)
+    {
+        return view('instituicoes.edit', compact('instituicao'));
+    }
+
     public function update(StoreInstituicaoRequest $request, Instituicao $instituicao)
     {
-        return response()->json(
-            $this->service->atualizar($instituicao, $request->validated())
-        );
+        $this->service->atualizar($instituicao, $request->validated());
+
+        return redirect()->route('instituicoes.index')
+            ->with('success', 'Instituição atualizada com sucesso.');
     }
 
-    // RF38 – Ativar/desativar instituição (desativação lógica – RNF15)
     public function toggleAtiva(Instituicao $instituicao)
     {
-        return response()->json(
-            $this->service->toggleAtiva($instituicao)
-        );
+        $this->service->toggleAtiva($instituicao);
+
+        return redirect()->route('instituicoes.index')
+            ->with('success', 'Status da instituição atualizado com sucesso.');
     }
 
     /*
     |--------------------------------------------------------------------------
-    | RF39 – VINCULAR CURSOS (Funções Fundamentais)
+    | RF39 – VINCULAR CURSOS
     |--------------------------------------------------------------------------
     */
 
-    // RF39 – Associar curso existente à instituição
     public function vincularCurso(Request $request, Instituicao $instituicao)
     {
-        $request->validate([
-            'curso_id' => 'required|exists:cursos,id',
-        ]);
+        $request->validate(['curso_id' => 'required|exists:cursos,id']);
+        $this->service->vincularCurso($instituicao, $request->input('curso_id'));
 
-        return response()->json(
-            $this->service->vincularCurso($instituicao, $request->input('curso_id'))
-        );
+        return redirect()->back()->with('success', 'Curso vinculado com sucesso.');
     }
 
-    // RF39 – Desvincular curso da instituição
     public function desvincularCurso(Instituicao $instituicao, int $cursoId)
     {
-        return response()->json(
-            $this->service->desvincularCurso($instituicao, $cursoId)
-        );
+        $this->service->desvincularCurso($instituicao, $cursoId);
+
+        return redirect()->back()->with('success', 'Curso desvinculado com sucesso.');
     }
 
     /*
     |--------------------------------------------------------------------------
-    | RF40 – VINCULAR COORDENADORES (Funções Fundamentais)
+    | RF40 – VINCULAR COORDENADORES
     |--------------------------------------------------------------------------
     */
 
-    // RF40 – Associar coordenador à instituição
     public function vincularCoordenador(Request $request, Instituicao $instituicao)
     {
-        $request->validate([
-            'coordenador_id' => 'required|exists:coordenadores,id',
-        ]);
+        $request->validate(['coordenador_id' => 'required|exists:coordenadores,id']);
+        $this->service->vincularCoordenador($instituicao, $request->input('coordenador_id'));
 
-        return response()->json(
-            $this->service->vincularCoordenador($instituicao, $request->input('coordenador_id'))
-        );
+        return redirect()->back()->with('success', 'Coordenador vinculado com sucesso.');
     }
 
-    // RF40 – Desvincular coordenador da instituição
     public function desvincularCoordenador(Instituicao $instituicao, int $coordenadorId)
     {
-        return response()->json(
-            $this->service->desvincularCoordenador($instituicao, $coordenadorId)
-        );
+        $this->service->desvincularCoordenador($instituicao, $coordenadorId);
+
+        return redirect()->back()->with('success', 'Coordenador desvinculado com sucesso.');
     }
 
     /*
     |--------------------------------------------------------------------------
-    | RF41 – CONSULTAR ESTRUTURA ACADÊMICA (Função de Saída)
+    | RF41 – CONSULTAR ESTRUTURA ACADÊMICA
     |--------------------------------------------------------------------------
     */
 
-    // RF41 – Listar todos os cursos da instituição
     public function listarCursos(Instituicao $instituicao)
     {
-        return response()->json(
-            $this->service->listarCursos($instituicao)
-        );
+        $cursos = $this->service->listarCursos($instituicao);
+
+        return view('instituicoes.cursos', compact('instituicao', 'cursos'));
     }
 
-    // RF41 – Listar todos os coordenadores da instituição
     public function listarCoordenadores(Instituicao $instituicao)
     {
-        return response()->json(
-            $this->service->listarCoordenadores($instituicao)
-        );
+        $coordenadores = $this->service->listarCoordenadores($instituicao);
+
+        return view('instituicoes.coordenadores', compact('instituicao', 'coordenadores'));
     }
 
-    // RF41 – Visualizar estrutura acadêmica completa (cursos + coordenadores)
     public function estruturaAcademica(Instituicao $instituicao)
     {
-        return response()->json(
-            $this->service->estruturaAcademica($instituicao)
-        );
+        $estrutura = $this->service->estruturaAcademica($instituicao);
+
+        return view('instituicoes.estrutura', compact('instituicao', 'estrutura'));
     }
 
     /*
     |--------------------------------------------------------------------------
-    | RF42 – EMITIR RELATÓRIO INSTITUCIONAL (Função de Saída)
+    | RF42 – RELATÓRIO INSTITUCIONAL
     |--------------------------------------------------------------------------
     */
 
-    // RF42 – Gerar relatório consolidado (dados + cursos + coord. + estágios)
     public function relatorio(Instituicao $instituicao)
     {
-        return response()->json(
-            $this->service->gerarRelatorio($instituicao)
-        );
+        $relatorio = $this->service->gerarRelatorio($instituicao);
+
+        return view('instituicoes.relatorio', compact('instituicao', 'relatorio'));
     }
 
-    // RF42 – Exportar dados da instituição (CSV/PDF)
     public function exportar(Request $request, Instituicao $instituicao)
     {
-        $request->validate([
-            'formato' => 'required|in:csv,pdf',
-        ]);
+        $request->validate(['formato' => 'required|in:csv,pdf']);
 
         return $this->service->exportar($instituicao, $request->input('formato'));
     }

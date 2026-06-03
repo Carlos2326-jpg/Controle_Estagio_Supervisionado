@@ -18,11 +18,14 @@ class MatriculaController extends Controller
     {
         $alunos = Aluno::with(['user'])
             ->where('curso_id', $curso->id)
-            ->when($request->situacao_estagio, fn($q) => $q->where('situacao_estagio', $request->situacao_estagio))
+            ->when(
+                $request->situacao_estagio,
+                fn($q) => $q->where('situacao_estagio', $request->situacao_estagio)
+            )
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return response()->json($alunos);
+        return view('matriculas.index', compact('alunos', 'curso'));
     }
 
     /*
@@ -37,19 +40,15 @@ class MatriculaController extends Controller
             'busca' => 'required|string'
         ]);
 
-        $aluno = Aluno::with(['user'])
+        $alunos = Aluno::with(['user'])
             ->where('curso_id', $curso->id)
             ->where(function ($q) use ($request) {
                 $q->where('matricula', $request->busca)
                   ->orWhere('cpf', $request->busca);
             })
-            ->first();
+            ->paginate(20);
 
-        if (!$aluno) {
-            return response()->json(['message' => 'Aluno não encontrado.'], 404);
-        }
-
-        return response()->json($aluno);
+        return view('matriculas.index', compact('alunos', 'curso'));
     }
 
     /*
@@ -61,15 +60,16 @@ class MatriculaController extends Controller
     public function historico(Curso $curso, Aluno $aluno)
     {
         if ($aluno->curso_id !== $curso->id) {
-            return response()->json(['message' => 'Aluno não pertence a este curso.'], 403);
+            abort(403, 'Aluno não pertence a este curso.');
         }
 
-        $historico = $aluno->load([
+        $aluno->load([
+            'user',
             'solicitacoesEstagio.empresa',
             'solicitacoesEstagio.contrato',
         ]);
 
-        return response()->json($historico);
+        return view('matriculas.historico', compact('aluno', 'curso'));
     }
 
     /*
@@ -83,10 +83,13 @@ class MatriculaController extends Controller
         $alunos = Aluno::with(['user'])
             ->where('curso_id', $curso->id)
             ->where('ativo', true)
-            ->whereRaw('carga_horaria_cumprida < ?', [$curso->carga_horaria_estagio])
+            ->whereRaw(
+                'carga_horaria_cumprida < ?',
+                [$curso->carga_horaria_estagio]
+            )
             ->orderBy('created_at', 'asc')
             ->paginate(20);
 
-        return response()->json($alunos);
+        return view('matriculas.alertas', compact('alunos', 'curso'));
     }
 }
