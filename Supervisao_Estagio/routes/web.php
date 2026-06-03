@@ -6,6 +6,7 @@ use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\CoordenadorController;
 use App\Http\Controllers\MatriculaController;
 use App\Http\Controllers\RelatorioController;
+use App\Http\Controllers\CursoController;
 
 Route::get('/', function () {
     return redirect('/empresas');
@@ -109,39 +110,67 @@ Route::prefix('coordenadores')->group(function () {
 | RF12 a RF15 – MATRÍCULAS DO CURSO
 |--------------------------------------------------------------------------
 */
-Route::prefix('cursos/{curso}/matriculas')->group(function () {
-    // RF12 – Listar alunos matriculados
-    Route::get('/', [MatriculaController::class, 'index']);
+Route::prefix('cursos/{curso}/matriculas')->name('matriculas.')->group(function () {
 
-    // RF13 – Buscar aluno por matrícula ou CPF
-    Route::get('/buscar', [MatriculaController::class, 'buscar']);
+        // RF12 – Listar alunos matriculados
+        Route::get('/', [MatriculaController::class, 'index'])
+            ->name('index');
 
-    // RF14 – Histórico de estágios do aluno
-    Route::get('/{aluno}/historico', [MatriculaController::class, 'historico']);
+        // RF13 – Buscar aluno por matrícula ou CPF
+        Route::get('/buscar', [MatriculaController::class, 'buscar'])
+            ->name('buscar');
 
-    // RF15 – Alunos próximos do prazo sem carga horária
-    Route::get('/alertas/sem-horas', [MatriculaController::class, 'alunosSemHoras']);
-});
+        // RF14 – Histórico de estágios do aluno
+        Route::get('/{aluno}/historico', [MatriculaController::class, 'historico'])
+            ->name('historico');
+
+        // RF15 – Alunos sem horas suficientes
+        Route::get('/alertas/sem-horas', [MatriculaController::class, 'alunosSemHoras'])
+            ->name('alertas');
+    });
 
 /*
 |--------------------------------------------------------------------------
 | RF07 a RF11 – RELATÓRIOS
 |--------------------------------------------------------------------------
 */
-Route::prefix('coordenadores/{coordenador}/relatorios')->group(function () {
-    // RF07 – Relatório de alunos por situação
-    Route::get('/alunos', [RelatorioController::class, 'alunos']);
+Route::prefix('coordenadores/{coordenador}/relatorios')->name('relatorios.')->group(function () {
 
-    // RF08 – Relatório de contratos ativos
-    Route::get('/contratos', [RelatorioController::class, 'contratos']);
+        Route::get('/alunos', [RelatorioController::class, 'alunos'])
+            ->name('alunos');
 
-    // RF09 – Relatório de horas cumpridas
-    Route::get('/horas', [RelatorioController::class, 'horas']);
+        Route::get('/contratos', [RelatorioController::class, 'contratos'])
+            ->name('contratos');
 
-    // RF10 – Relatório de avaliações
-    Route::get('/avaliacoes', [RelatorioController::class, 'avaliacoes']);
+        Route::get('/horas', [RelatorioController::class, 'horas'])
+            ->name('horas');
 
-    // RF11 – Exportar relatório em PDF
-    Route::get('/exportar-pdf', [RelatorioController::class, 'exportarPdf']);
+        Route::get('/avaliacoes', [RelatorioController::class, 'avaliacoes'])
+            ->name('avaliacoes');
+
+        Route::get('/exportar-pdf', [RelatorioController::class, 'exportarPdf'])
+            ->name('pdf');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| RF31 – GERENCIAR CURSOS
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('cursos')->name('cursos.')->group(function () {
+
+    Route::get('/', [CursoController::class, 'index'])->name('index');
+
+    Route::get('/create', [CursoController::class, 'create'])->name('create');
+
+    Route::post('/', [CursoController::class, 'store'])->name('store');
+
+    Route::get('/{curso}', [CursoController::class, 'show'])->name('show');
+
+    Route::get('/{curso}/edit', [CursoController::class, 'edit'])->name('edit');
+
+    Route::put('/{curso}', [CursoController::class, 'update'])->name('update');
+
+    Route::patch('/{curso}/inativar', [CursoController::class, 'inativar'])->name('inativar');
 });
-
