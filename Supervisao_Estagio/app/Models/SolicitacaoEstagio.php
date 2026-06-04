@@ -24,11 +24,13 @@ class SolicitacaoEstagio extends Model
     ];
 
     protected $casts = [
-        'data_inicio' => 'date',
-        'data_fim' => 'date',
+        'data_inicio' => 'datetime',
+        'data_fim' => 'datetime',
         'carga_horaria_semanal' => 'integer',
         'carga_horaria_total' => 'integer',
     ];
+
+    protected $table = 'solicitacoes_estagio';
 
     public function aluno()
     {

@@ -14,7 +14,7 @@ class DocumentoController extends Controller
 
     public function index()
     {
-        $aluno = Auth::user()->aluno;
+        $aluno = \App\Models\Aluno::first();
         $documentos = $this->service->listarPorAluno($aluno);
 
         return view('documentos.index', compact('documentos'));
@@ -22,7 +22,7 @@ class DocumentoController extends Controller
 
     public function create()
     {
-        $aluno = Auth::user()->aluno;
+        $aluno = \App\Models\Aluno::first();
         $solicitacoes = SolicitacaoEstagio::where('aluno_id', $aluno->id)->get();
 
         return view('documentos.create', compact('solicitacoes'));
@@ -37,7 +37,7 @@ class DocumentoController extends Controller
             'arquivo' => 'required|file|mimes:pdf,doc,docx,jpg,png|max:5120',
         ]);
 
-        $aluno = Auth::user()->aluno;
+        $aluno = \App\Models\Aluno::first();
         $this->service->upload($aluno, $dados, $request->file('arquivo'));
 
         return redirect()->route('documentos.index')->with('sucesso', 'Documento enviado com sucesso.');

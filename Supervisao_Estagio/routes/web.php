@@ -48,7 +48,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('alunos', AlunoController::class);
 
     // ==================== SOLICITAÇÕES ====================
-    Route::resource('solicitacoes', SolicitacaoController::class)->except(['edit', 'update']);
+    Route::resource('solicitacoes', SolicitacaoController::class)->except(['edit', 'update'])->parameters(['solicitacoes' => 'solicitacao']);
 
     // ==================== ATIVIDADES ====================
     Route::resource('atividades', AtividadeController::class);

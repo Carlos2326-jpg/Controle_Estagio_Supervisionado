@@ -39,11 +39,11 @@
                 </div>
                 <div>
                     <dt class="text-gray-500">Início</dt>
-                    <dd class="font-medium text-gray-800">{{ $solicitacao->data_inicio->format('d/m/Y') }}</dd>
+                    <dd class="font-medium text-gray-800">{{ \Carbon\Carbon::parse($solicitacao->data_inicio)->format('d/m/Y') }}</dd>
                 </div>
                 <div>
                     <dt class="text-gray-500">Fim</dt>
-                    <dd class="font-medium text-gray-800">{{ $solicitacao->data_fim->format('d/m/Y') }}</dd>
+                    <dd class="font-medium text-gray-800">{{ \Carbon\Carbon::parse($solicitacao->data_fim)->format('d/m/Y') }}</dd>
                 </div>
                 <div>
                     <dt class="text-gray-500">Carga Horária Semanal</dt>

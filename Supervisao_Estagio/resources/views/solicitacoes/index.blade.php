@@ -24,8 +24,8 @@
                 @forelse($solicitacoes as $solicitacao)
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3">{{ $solicitacao->empresa }}</td>
-                        <td class="px-4 py-3">{{ $solicitacao->data_inicio->format('d/m/Y') }}</td>
-                        <td class="px-4 py-3">{{ $solicitacao->data_fim->format('d/m/Y') }}</td>
+                        <td class="px-4 py-3">{{ \Carbon\Carbon::parse($solicitacao->data_inicio)->format('d/m/Y') }}</td>
+                        <td class="px-4 py-3">{{ \Carbon\Carbon::parse($solicitacao->data_fim)->format('d/m/Y') }}</td>
                         <td class="px-4 py-3">{{ $solicitacao->status }}</td>
                         <td class="px-4 py-3 flex gap-2">
                             <a href="{{ route('solicitacoes.show', $solicitacao) }}"
