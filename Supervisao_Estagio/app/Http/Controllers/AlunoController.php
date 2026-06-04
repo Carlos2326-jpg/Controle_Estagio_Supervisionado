@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Aluno;
+use App\Models\SolicitacaoEstagio;
 use App\Services\AlunoService;
 use Illuminate\Http\Request;
 
@@ -66,6 +67,6 @@ class AlunoController extends Controller
 
         $this->service->atualizar($aluno, $dados);
 
-        return redirect()->route('alunos.show', $aluno)->with('sucesso', 'Dados atualizados com sucesso.');
+        return redirect()->route('alunos.show', $aluno)->with('sucesso', 'Dados updated com sucesso.');
     }
 }
