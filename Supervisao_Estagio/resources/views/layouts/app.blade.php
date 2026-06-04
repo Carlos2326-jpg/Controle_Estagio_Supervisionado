@@ -11,7 +11,7 @@
     <nav class="bg-white shadow px-6 py-4 flex items-center justify-between">
         <span class="font-bold text-lg text-gray-800">Gestão de Estágios</span>
         <div class="flex items-center gap-4">
-            <span class="text-sm text-gray-600">{{ Auth::user()?->name ?? 'Visitante' }}</span>
+            <span class="text-sm text-gray-600">{{ Auth::user()->name }}</span>
               @auth
                   <form method="POST" action="{{ route('logout') }}">
                       @csrf

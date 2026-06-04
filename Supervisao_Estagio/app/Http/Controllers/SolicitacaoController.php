@@ -13,7 +13,7 @@ class SolicitacaoController extends Controller
 
     public function index()
     {
-        $aluno = \App\Models\Aluno::first();
+        $aluno = Auth::user()->aluno;
         $solicitacoes = $this->service->listarPorAluno($aluno);
 
         return view('solicitacoes.index', compact('solicitacoes'));
@@ -37,7 +37,7 @@ class SolicitacaoController extends Controller
             'descricao_atividades' => 'required|string',
         ]);
 
-        $aluno = \App\Models\Aluno::first();
+        $aluno = Auth::user()->aluno;
         $this->service->criar($aluno, $dados);
 
         return redirect()->route('solicitacoes.index')->with('sucesso', 'Solicitação enviada com sucesso.');

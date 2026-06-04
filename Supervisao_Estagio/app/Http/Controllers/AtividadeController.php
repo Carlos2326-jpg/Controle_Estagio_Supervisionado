@@ -14,7 +14,7 @@ class AtividadeController extends Controller
 
     public function index()
     {
-        $aluno = \App\Models\Aluno::first();
+        $aluno = Auth::user()->aluno;
         $atividades = $this->service->listarPorAluno($aluno);
 
         return view('atividades.index', compact('atividades'));
@@ -22,7 +22,7 @@ class AtividadeController extends Controller
 
     public function create()
     {
-        $aluno = \App\Models\Aluno::first();
+        $aluno = Auth::user()->aluno;
         $solicitacoes = SolicitacaoEstagio::where('aluno_id', $aluno->id)
             ->aprovadas()
             ->get();
@@ -41,7 +41,7 @@ class AtividadeController extends Controller
             'descricao' => 'required|string',
         ]);
 
-        $aluno = \App\Models\Aluno::first();
+        $aluno = Auth::user()->aluno;
         $solicitacao = SolicitacaoEstagio::findOrFail($dados['solicitacao_id']);
         $this->service->criar($aluno, $solicitacao, $dados);
 
@@ -50,7 +50,7 @@ class AtividadeController extends Controller
 
     public function edit(AtividadeEstagio $atividade)
     {
-        $aluno = \App\Models\Aluno::first();
+        $aluno = Auth::user()->aluno;
         $solicitacoes = SolicitacaoEstagio::where('aluno_id', $aluno->id)
             ->aprovadas()
             ->get();
