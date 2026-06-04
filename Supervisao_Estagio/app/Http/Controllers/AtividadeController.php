@@ -37,7 +37,7 @@ class AtividadeController extends Controller
             'data_atividade' => 'required|date',
             'hora_inicio' => 'required',
             'hora_fim' => 'required|after:hora_inicio',
-            'horas_computadas' => 'required|numeric|min:0.1',
+            'horas_computadas' => 'required|numeric|min:0.1|max:99.99',
             'descricao' => 'required|string',
         ]);
 
@@ -64,7 +64,7 @@ class AtividadeController extends Controller
             'data_atividade' => 'required|date',
             'hora_inicio' => 'required',
             'hora_fim' => 'required|after:hora_inicio',
-            'horas_computadas' => 'required|numeric|min:0.1',
+            'horas_computadas' => 'required|numeric|min:0.1|max:99.99',
             'descricao' => 'required|string',
         ]);
 
