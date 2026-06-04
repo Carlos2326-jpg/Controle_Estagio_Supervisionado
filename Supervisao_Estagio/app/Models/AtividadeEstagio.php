@@ -9,6 +9,8 @@ class AtividadeEstagio extends Model
 {
     use HasFactory;
 
+    protected $table = 'atividades_estagio';
+
     protected $fillable = [
         'aluno_id',
         'solicitacao_id',
