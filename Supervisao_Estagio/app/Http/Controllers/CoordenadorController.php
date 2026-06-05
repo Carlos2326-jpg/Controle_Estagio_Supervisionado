@@ -28,24 +28,31 @@ class CoordenadorController extends Controller
 
     public function index(Request $request)
     {
-        return response()->json(
-            $this->service->listar($request->only(['status', 'curso_id', 'busca']))
+        $coordenadores = $this->service->listar(
+            $request->only(['status', 'curso_id', 'busca'])
         );
+
+        return view('coordenadores.index', compact('coordenadores'));
     }
 
     public function store(StoreCoordenadorRequest $request)
     {
-        return response()->json(
-            $this->service->cadastrar($request->validated()),
-            201
+        $coordenador = $this->service->cadastrar(
+            $request->validated()
         );
+
+        return redirect('/coordenadores')
+            ->with('sucesso', 'Coordenador cadastrado com sucesso.');
     }
 
-    public function update(Request $request, Coordenador $coordenador)
+    public function create()
     {
-        return response()->json(
-            $this->service->atualizar($coordenador, $request->all())
-        );
+        return view('coordenadores.create');
+    }
+
+    public function edit(Coordenador $coordenador)
+    {
+        return view('coordenadores.edit', compact('coordenador'));
     }
 
     public function inativar(Coordenador $coordenador)

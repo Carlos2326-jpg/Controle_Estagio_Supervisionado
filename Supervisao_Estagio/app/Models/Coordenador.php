@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Coordenador extends Model {
+    protected $table = 'coordenadores';
     use HasFactory;
 
     protected $fillable = [
