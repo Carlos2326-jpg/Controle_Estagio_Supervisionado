@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Novo Coordenador</title>
+    <title>Editar Coordenador</title>
 
     <style>
         body { font-family: sans-serif; margin: 20px; color: #333; max-width: 700px; }
@@ -18,29 +18,54 @@
 </head>
 <body>
 
-<h1>Novo Coordenador</h1>
+<h1>Editar Coordenador</h1>
 
-<form method="POST" action="/coordenadores">
+<form method="POST" action="/coordenadores/{{ $coordenador->id }}">
     @csrf
+    @method('PUT')
 
     <div class="grupo">
         <label>Nome</label>
-        <input type="text" name="nome" required>
+        <input
+            type="text"
+            name="nome"
+            value="{{ old('nome', $coordenador->nome) }}"
+            required
+        >
     </div>
 
     <div class="grupo">
         <label>E-mail</label>
-        <input type="email" name="email" required>
+        <input
+            type="email"
+            name="email"
+            value="{{ old('email', $coordenador->email) }}"
+            required
+        >
     </div>
 
     <div class="grupo">
         <label>Curso ID</label>
-        <input type="number" name="curso_id">
+        <input
+            type="number"
+            name="curso_id"
+            value="{{ old('curso_id', $coordenador->curso_id) }}"
+        >
     </div>
+    
+    <label>Instituição</label>
+
+    <select name="instituicao_id" class="form-control">
+        @foreach($instituicoes as $instituicao)
+            <option value="{{ $instituicao->id }}">
+                {{ $instituicao->nome }}
+            </option>
+        @endforeach
+    </select>
 
     <div class="rodape">
         <button type="submit" class="btn btn-primario">
-            Salvar
+            Atualizar
         </button>
 
         <a href="/coordenadores" class="btn btn-secundario">

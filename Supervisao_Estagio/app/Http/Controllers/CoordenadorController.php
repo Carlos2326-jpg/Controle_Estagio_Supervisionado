@@ -9,6 +9,7 @@ use App\Models\Avaliacao;
 use App\Http\Requests\StoreCoordenadorRequest;
 use App\Services\CoordenadorService;
 use Illuminate\Http\Request;
+use App\Models\Instituicao;
 
 
 class CoordenadorController extends Controller
@@ -47,12 +48,22 @@ class CoordenadorController extends Controller
 
     public function create()
     {
-        return view('coordenadores.create');
+        $instituicoes = Instituicao::all();
+
+        return view(
+            'coordenadores.create',
+            compact('instituicoes')
+        );
     }
 
     public function edit(Coordenador $coordenador)
     {
-        return view('coordenadores.edit', compact('coordenador'));
+        $instituicoes = Instituicao::all();
+
+        return view(
+            'coordenadores.edit',
+            compact('coordenador', 'instituicoes')
+        );
     }
 
     public function inativar(Coordenador $coordenador)

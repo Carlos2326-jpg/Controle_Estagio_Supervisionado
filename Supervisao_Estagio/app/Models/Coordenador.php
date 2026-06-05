@@ -13,6 +13,7 @@ class Coordenador extends Model {
         'user_id',
         'matricula',
         'departamento',
+        'instituicao_id',
         'ativo'
     ];
 
@@ -60,5 +61,10 @@ class Coordenador extends Model {
             Avaliacao::class,
             'avaliador_id'
         );
+    }
+
+    public function instituicao()
+    {
+        return $this->belongsTo(Instituicao::class);
     }
 }
