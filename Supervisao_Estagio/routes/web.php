@@ -6,6 +6,7 @@ use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\CoordenadorController;
 use App\Http\Controllers\MatriculaController;
 use App\Http\Controllers\RelatorioController;
+use App\Http\Controllers\CursoController;
 
 Route::get('/', function () {
     return redirect('/empresas');
@@ -150,3 +151,25 @@ Route::prefix('coordenadores/{coordenador}/relatorios')->group(function () {
     Route::get('/exportar-pdf', [RelatorioController::class, 'exportarPdf']);
 });
 
+/*
+|--------------------------------------------------------------------------
+| RF31 – GERENCIAR CURSOS
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('cursos')->name('cursos.')->group(function () {
+
+    Route::get('/', [CursoController::class, 'index'])->name('index');
+
+    Route::get('/create', [CursoController::class, 'create'])->name('create');
+
+    Route::post('/', [CursoController::class, 'store'])->name('store');
+
+    Route::get('/{curso}', [CursoController::class, 'show'])->name('show');
+
+    Route::get('/{curso}/edit', [CursoController::class, 'edit'])->name('edit');
+
+    Route::put('/{curso}', [CursoController::class, 'update'])->name('update');
+
+    Route::patch('/{curso}/inativar', [CursoController::class, 'inativar'])->name('inativar');
+});
