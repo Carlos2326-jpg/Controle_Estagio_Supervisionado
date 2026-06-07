@@ -18,10 +18,6 @@ use Illuminate\Support\Facades\Storage;
 
 class AlunoService
 {
-    // ────────────────────────────────────────────
-    // RF01 – Gerenciar Dados do Aluno
-    // ────────────────────────────────────────────
-
     public function listar(array $filtros = []): LengthAwarePaginator
     {
         $query = Aluno::with(['user', 'curso'])
@@ -44,7 +40,7 @@ class AlunoService
             $user = User::create([
                 'name'     => $dados['nome'],
                 'email'    => $dados['email'],
-                'password' => Hash::make($dados['password'] ?? 'Estagio@2024'),
+                'password' => Hash::make($dados['password']),
             ]);
 
             $user->assignRole('aluno');
@@ -71,18 +67,18 @@ class AlunoService
     public function atualizar(Aluno $aluno, array $dados): Aluno
     {
         DB::transaction(function () use ($aluno, $dados) {
-            $aluno->user->update(array_filter([
-                'name'  => $dados['nome'] ?? null,
-                'email' => $dados['email'] ?? null,
-            ]));
+            if (isset($dados['nome']) || isset($dados['email'])) {
+                $aluno->user->update([
+                    'name'  => $dados['nome'] ?? $aluno->user->name,
+                    'email' => $dados['email'] ?? $aluno->user->email,
+                ]);
+            }
 
-            $aluno->update(array_filter([
-                'curso_id'        => $dados['curso_id'] ?? null,
-                'matricula'       => $dados['matricula'] ?? null,
-                'telefone'        => $dados['telefone'] ?? null,
-                'data_nascimento' => $dados['data_nascimento'] ?? null,
-                'endereco'        => $dados['endereco'] ?? null,
-            ]));
+            $aluno->update([
+                'telefone'        => $dados['telefone'] ?? $aluno->telefone,
+                'data_nascimento' => $dados['data_nascimento'] ?? $aluno->data_nascimento,
+                'endereco'        => $dados['endereco'] ?? $aluno->endereco,
+            ]);
         });
 
         return $aluno->fresh(['user', 'curso']);
@@ -93,10 +89,6 @@ class AlunoService
         $aluno->update(['ativo' => false]);
         Log::info("Aluno {$aluno->id} inativado.");
     }
-
-    // ────────────────────────────────────────────
-    // RF02 – Consultar Situação de Estágio
-    // ────────────────────────────────────────────
 
     public function consultarSituacao(Aluno $aluno): array
     {
@@ -113,17 +105,23 @@ class AlunoService
         ];
     }
 
-    // ────────────────────────────────────────────
-    // RF03 – Solicitar Estágio
-    // ────────────────────────────────────────────
-
     public function solicitarEstagio(Aluno $aluno, array $dados): SolicitacaoEstagio
     {
-        abort_if(
-            $aluno->temSolicitacaoPendente(),
-            422,
-            'Você já possui uma solicitação de estágio pendente.'
-        );
+        // NEG-01: Verifica se já possui solicitação pendente
+        if ($aluno->temSolicitacaoPendente()) {
+            abort(422, 'Você já possui uma solicitação de estágio pendente.');
+        }
+        
+        // NEG-04: Verifica se o aluno já está em estágio
+        if ($aluno->situacao_estagio === 'em_andamento') {
+            abort(422, 'Você já possui um estágio em andamento.');
+        }
+        
+        // Verifica se a empresa possui convênio ativo (NEG-05)
+        $empresa = \App\Models\Empresa::findOrFail($dados['empresa_id']);
+        if (!$empresa->possuiConvenioAtivo()) {
+            abort(422, 'A empresa selecionada não possui convênio ativo com a instituição.');
+        }
 
         $solicitacao = SolicitacaoEstagio::create([
             'aluno_id'              => $aluno->id,
@@ -143,10 +141,6 @@ class AlunoService
         return $solicitacao->load(['empresa', 'supervisor']);
     }
 
-    // ────────────────────────────────────────────
-    // RF04 – Consultar Solicitações
-    // ────────────────────────────────────────────
-
     public function listarSolicitacoes(Aluno $aluno, array $filtros = []): LengthAwarePaginator
     {
         return SolicitacaoEstagio::with(['empresa', 'supervisor', 'historicoAnalises'])
@@ -156,32 +150,20 @@ class AlunoService
             ->paginate(20);
     }
 
-    // ────────────────────────────────────────────
-    // RF05 – Cancelar Solicitação
-    // ────────────────────────────────────────────
-
     public function cancelarSolicitacao(Aluno $aluno, SolicitacaoEstagio $solicitacao): void
     {
-        abort_if(
-            $solicitacao->aluno_id !== $aluno->id,
-            403,
-            'Esta solicitação não pertence ao aluno informado.'
-        );
+        if ($solicitacao->aluno_id !== $aluno->id) {
+            abort(403, 'Esta solicitação não pertence ao aluno informado.');
+        }
 
-        abort_if(
-            !$solicitacao->isPendente(),
-            422,
-            'Apenas solicitações com status pendente podem ser canceladas.'
-        );
+        if (!$solicitacao->isPendente()) {
+            abort(422, 'Apenas solicitações com status pendente podem ser canceladas.');
+        }
 
         $solicitacao->update(['status' => 'cancelada']);
 
         Log::info("Solicitação {$solicitacao->id} cancelada pelo aluno {$aluno->id}.");
     }
-
-    // ────────────────────────────────────────────
-    // RF06 – Visualizar Contrato de Estágio
-    // ────────────────────────────────────────────
 
     public function listarContratos(Aluno $aluno, array $filtros = []): LengthAwarePaginator
     {
@@ -194,73 +176,73 @@ class AlunoService
 
     public function visualizarContrato(Aluno $aluno, Contrato $contrato): Contrato
     {
-        abort_if(
-            $contrato->aluno_id !== $aluno->id,
-            403,
-            'Este contrato não pertence ao aluno informado.'
-        );
+        if ($contrato->aluno_id !== $aluno->id) {
+            abort(403, 'Este contrato não pertence ao aluno informado.');
+        }
 
         return $contrato->load(['empresa', 'supervisor', 'solicitacao']);
     }
-
-    // ────────────────────────────────────────────
-    // RF07 – Registrar Atividades de Estágio
-    // ────────────────────────────────────────────
 
     public function registrarAtividade(Aluno $aluno, array $dados): AtividadeEstagio
     {
         $solicitacao = SolicitacaoEstagio::findOrFail($dados['solicitacao_estagio_id']);
 
-        abort_if(
-            $solicitacao->aluno_id !== $aluno->id,
-            403,
-            'Esta solicitação não pertence ao aluno informado.'
-        );
+        if ($solicitacao->aluno_id !== $aluno->id) {
+            abort(403, 'Esta solicitação não pertence ao aluno informado.');
+        }
 
-        abort_if(
-            !$solicitacao->isAprovada(),
-            422,
-            'Só é possível registrar atividades em estágios aprovados.'
-        );
+        if (!$solicitacao->isAprovada()) {
+            abort(422, 'Só é possível registrar atividades em estágios aprovados.');
+        }
+
+        // VAL-04: Valida data dentro do período do contrato
+        $data = \Carbon\Carbon::parse($dados['data']);
+        if ($data->lt($solicitacao->data_inicio_prevista) || $data->gt($solicitacao->data_fim_prevista)) {
+            abort(422, 'A data da atividade deve estar dentro do período de vigência do estágio.');
+        }
+
+        // NEG-07: Valida carga horária semanal
+        $inicioSemana = $data->copy()->startOfWeek();
+        $fimSemana = $data->copy()->endOfWeek();
+        $horasSemanaAtual = AtividadeEstagio::where('solicitacao_estagio_id', $solicitacao->id)
+            ->whereBetween('data', [$inicioSemana, $fimSemana])
+            ->sum('horas');
+        
+        if (($horasSemanaAtual + $dados['horas']) > $solicitacao->carga_horaria_semanal) {
+            abort(422, "A carga horária semanal não pode exceder {$solicitacao->carga_horaria_semanal} horas.");
+        }
 
         $atividade = AtividadeEstagio::create([
-            'aluno_id'              => $aluno->id,
+            'aluno_id'               => $aluno->id,
             'solicitacao_estagio_id' => $solicitacao->id,
-            'data'                  => $dados['data'],
-            'descricao'             => $dados['descricao'],
-            'horas'                 => $dados['horas'],
-            'validado_supervisor'   => false,
+            'data'                   => $dados['data'],
+            'descricao'              => $dados['descricao'],
+            'horas'                  => $dados['horas'],
+            'validado_supervisor'    => false,
         ]);
 
-        // Atualiza carga horária acumulada do aluno
         $this->recalcularCargaHoraria($aluno);
 
         return $atividade;
     }
 
-    // ────────────────────────────────────────────
-    // RF08 – Editar Registros de Atividades
-    // ────────────────────────────────────────────
-
     public function atualizarAtividade(Aluno $aluno, AtividadeEstagio $atividade, array $dados): AtividadeEstagio
     {
-        abort_if(
-            $atividade->aluno_id !== $aluno->id,
-            403,
-            'Este registro não pertence ao aluno informado.'
-        );
+        if ($atividade->aluno_id !== $aluno->id) {
+            abort(403, 'Este registro não pertence ao aluno informado.');
+        }
 
-        abort_if(
-            !$atividade->podeEditar(),
-            422,
-            'Este registro já foi validado pelo supervisor e não pode ser editado.'
-        );
+        if (!$atividade->podeEditar()) {
+            abort(422, 'Este registro já foi validado pelo supervisor e não pode ser editado.');
+        }
 
-        $atividade->update(array_filter([
-            'data'      => $dados['data'] ?? null,
-            'descricao' => $dados['descricao'] ?? null,
-            'horas'     => $dados['horas'] ?? null,
-        ]));
+        // VAL-03: Substitui array_filter por verificação explícita
+        $updateData = [];
+        if (isset($dados['data'])) $updateData['data'] = $dados['data'];
+        if (isset($dados['descricao'])) $updateData['descricao'] = $dados['descricao'];
+        if (isset($dados['horas'])) $updateData['horas'] = $dados['horas'];
+        
+        $atividade->update($updateData);
 
         $this->recalcularCargaHoraria($aluno);
 
@@ -269,17 +251,13 @@ class AlunoService
 
     public function excluirAtividade(Aluno $aluno, AtividadeEstagio $atividade): void
     {
-        abort_if(
-            $atividade->aluno_id !== $aluno->id,
-            403,
-            'Este registro não pertence ao aluno informado.'
-        );
+        if ($atividade->aluno_id !== $aluno->id) {
+            abort(403, 'Este registro não pertence ao aluno informado.');
+        }
 
-        abort_if(
-            !$atividade->podeEditar(),
-            422,
-            'Este registro já foi validado pelo supervisor e não pode ser excluído.'
-        );
+        if (!$atividade->podeEditar()) {
+            abort(422, 'Este registro já foi validado pelo supervisor e não pode ser excluído.');
+        }
 
         $atividade->delete();
 
@@ -308,34 +286,26 @@ class AlunoService
             ->paginate(20);
     }
 
-    // ────────────────────────────────────────────
-    // RF09 – Enviar Documentos
-    // ────────────────────────────────────────────
-
     public function enviarDocumento(Aluno $aluno, array $dados): Documento
     {
         $arquivo = $dados['arquivo'];
         $caminho = $arquivo->store("documentos/aluno_{$aluno->id}", 'private');
 
         $documento = Documento::create([
-            'aluno_id'              => $aluno->id,
+            'aluno_id'               => $aluno->id,
             'solicitacao_estagio_id' => $dados['solicitacao_estagio_id'] ?? null,
-            'nome'                  => $dados['nome'] ?? $arquivo->getClientOriginalName(),
-            'tipo'                  => $dados['tipo'],
-            'caminho_arquivo'       => $caminho,
-            'mime_type'             => $arquivo->getMimeType(),
-            'tamanho_bytes'         => $arquivo->getSize(),
-            'status'                => 'pendente',
+            'nome'                   => $dados['nome'] ?? $arquivo->getClientOriginalName(),
+            'tipo'                   => $dados['tipo'],
+            'caminho_arquivo'        => $caminho,
+            'mime_type'              => $arquivo->getMimeType(),
+            'tamanho_bytes'          => $arquivo->getSize(),
+            'status'                 => 'pendente',
         ]);
 
         Log::info("Documento {$documento->id} enviado pelo aluno {$aluno->id}.");
 
         return $documento;
     }
-
-    // ────────────────────────────────────────────
-    // RF10 – Consultar Status de Documentos
-    // ────────────────────────────────────────────
 
     public function listarDocumentos(Aluno $aluno, array $filtros = []): LengthAwarePaginator
     {
@@ -347,10 +317,6 @@ class AlunoService
             ->paginate(20);
     }
 
-    // ────────────────────────────────────────────
-    // RF11 – Consultar Avaliações
-    // ────────────────────────────────────────────
-
     public function listarAvaliacoes(Aluno $aluno, array $filtros = []): LengthAwarePaginator
     {
         return $aluno->avaliacoes()
@@ -360,10 +326,6 @@ class AlunoService
             ->orderBy('data_avaliacao', 'desc')
             ->paginate(20);
     }
-
-    // ────────────────────────────────────────────
-    // RF12 – Receber Alertas
-    // ────────────────────────────────────────────
 
     public function listarAlertas(Aluno $aluno): Collection
     {
@@ -384,10 +346,6 @@ class AlunoService
     {
         $aluno->user->unreadNotifications()->update(['read_at' => now()]);
     }
-
-    // ────────────────────────────────────────────
-    // HELPERS INTERNOS
-    // ────────────────────────────────────────────
 
     private function recalcularCargaHoraria(Aluno $aluno): void
     {

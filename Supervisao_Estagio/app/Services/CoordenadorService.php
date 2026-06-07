@@ -17,10 +17,6 @@ use Illuminate\Support\Facades\Log;
 
 class CoordenadorService
 {
-    // ────────────────────────────────────────────
-    // RF13 – Gerenciar Coordenadores
-    // ────────────────────────────────────────────
-
     public function listar(array $filtros = []): LengthAwarePaginator
     {
         $query = Coordenador::with(['user', 'curso'])
@@ -40,18 +36,19 @@ class CoordenadorService
             $user = User::create([
                 'name'     => $dados['nome'],
                 'email'    => $dados['email'],
-                'password' => Hash::make($dados['password'] ?? 'Estagio@2024'),
+                'password' => Hash::make($dados['password']),
             ]);
 
             $user->assignRole('coordenador');
 
             return Coordenador::create([
-                'user_id'   => $user->id,
-                'curso_id'  => $dados['curso_id'],
-                'matricula' => $dados['matricula'],
-                'telefone'  => $dados['telefone'] ?? null,
-                'lattes'    => $dados['lattes'] ?? null,
-                'status'    => 'ativo',
+                'user_id'               => $user->id,
+                'curso_id'              => $dados['curso_id'],
+                'matricula_institucional' => $dados['matricula_institucional'],
+                'telefone'              => $dados['telefone'] ?? null,
+                'data_inicio_funcao'    => $dados['data_inicio_funcao'],
+                'instituicao_id'        => $dados['instituicao_id'],
+                'status'                => 'ativo',
             ]);
         });
     }
@@ -59,17 +56,17 @@ class CoordenadorService
     public function atualizar(Coordenador $coordenador, array $dados): Coordenador
     {
         DB::transaction(function () use ($coordenador, $dados) {
-            $coordenador->user->update(array_filter([
-                'name'  => $dados['nome'] ?? null,
-                'email' => $dados['email'] ?? null,
-            ]));
+            if (isset($dados['nome']) || isset($dados['email'])) {
+                $coordenador->user->update([
+                    'name'  => $dados['nome'] ?? $coordenador->user->name,
+                    'email' => $dados['email'] ?? $coordenador->user->email,
+                ]);
+            }
 
             $coordenador->update(array_filter([
-                'curso_id'  => $dados['curso_id'] ?? null,
-                'matricula' => $dados['matricula'] ?? null,
-                'telefone'  => $dados['telefone'] ?? null,
-                'lattes'    => $dados['lattes'] ?? null,
-                'status'    => $dados['status'] ?? null,
+                'curso_id'   => $dados['curso_id'] ?? null,
+                'telefone'   => $dados['telefone'] ?? null,
+                'status'     => $dados['status'] ?? null,
             ]));
         });
 
@@ -82,26 +79,27 @@ class CoordenadorService
         Log::info("Coordenador {$coordenador->id} inativado.");
     }
 
-    // ────────────────────────────────────────────
-    // RF14 – Consultar Informações Acadêmicas
-    // ────────────────────────────────────────────
-
     public function consultarInformacoesAcademicas(Coordenador $coordenador): array
     {
+        // EXCEP-01: Verifica se coordenador tem curso
+        if (!$coordenador->curso_id) {
+            abort(422, 'Coordenador não vinculado a nenhum curso.');
+        }
+        
         $curso = $coordenador->curso()->with(['alunos', 'coordenadores'])->first();
+        
+        if (!$curso) {
+            abort(422, 'Curso não encontrado para este coordenador.');
+        }
 
         return [
-            'curso'         => $curso,
-            'total_alunos'  => $curso->alunos->count(),
+            'curso'          => $curso,
+            'total_alunos'   => $curso->alunos->count(),
             'estagios_ativos' => SolicitacaoEstagio::where('curso_id', $curso->id)
                 ->where('status', 'aprovada')->count(),
-            'pendencias'    => $this->contarPendencias($coordenador),
+            'pendencias'     => $this->contarPendencias($coordenador),
         ];
     }
-
-    // ────────────────────────────────────────────
-    // RF15 – Analisar Solicitações de Estágio
-    // ────────────────────────────────────────────
 
     public function listarSolicitacoes(Coordenador $coordenador, array $filtros = []): LengthAwarePaginator
     {
@@ -117,11 +115,24 @@ class CoordenadorService
 
     public function aprovarSolicitacao(Coordenador $coordenador, SolicitacaoEstagio $solicitacao, ?string $justificativa = null): void
     {
+        // NEG-02: Verifica escopo - solicitação deve pertencer ao curso do coordenador
+        if ($solicitacao->curso_id !== $coordenador->curso_id) {
+            abort(403, 'Você não pode aprovar solicitações de outros cursos.');
+        }
+        
         $this->analisarSolicitacao($coordenador, $solicitacao, 'aprovada', $justificativa);
+        
+        // Atualiza situação do aluno
+        $solicitacao->aluno->update(['situacao_estagio' => 'em_andamento']);
     }
 
     public function reprovarSolicitacao(Coordenador $coordenador, SolicitacaoEstagio $solicitacao, string $justificativa): void
     {
+        // NEG-02: Verifica escopo - solicitação deve pertencer ao curso do coordenador
+        if ($solicitacao->curso_id !== $coordenador->curso_id) {
+            abort(403, 'Você não pode reprovar solicitações de outros cursos.');
+        }
+        
         $this->analisarSolicitacao($coordenador, $solicitacao, 'reprovada', $justificativa);
     }
 
@@ -134,7 +145,6 @@ class CoordenadorService
         DB::transaction(function () use ($coordenador, $solicitacao, $decisao, $justificativa) {
             $solicitacao->update(['status' => $decisao]);
 
-            // RF16 – Registrar Histórico
             HistoricoAnalise::create([
                 'solicitacao_estagio_id' => $solicitacao->id,
                 'coordenador_id'         => $coordenador->id,
@@ -143,7 +153,6 @@ class CoordenadorService
                 'analisado_em'           => now(),
             ]);
 
-            // RF12/RF21 – Notificar aluno
             $solicitacao->aluno->user->notify(
                 new AlertaCoordenadorNotification(
                     "Sua solicitação de estágio foi {$decisao}.",
@@ -152,10 +161,6 @@ class CoordenadorService
             );
         });
     }
-
-    // ────────────────────────────────────────────
-    // RF16 – Registrar Histórico de Análises
-    // ────────────────────────────────────────────
 
     public function historicoAnalises(Coordenador $coordenador, array $filtros = []): LengthAwarePaginator
     {
@@ -167,10 +172,6 @@ class CoordenadorService
             ->orderBy('analisado_em', 'desc')
             ->paginate(20);
     }
-
-    // ────────────────────────────────────────────
-    // RF17 – Validar Documentos
-    // ────────────────────────────────────────────
 
     public function listarDocumentos(Coordenador $coordenador, array $filtros = []): LengthAwarePaginator
     {
@@ -210,15 +211,14 @@ class CoordenadorService
         );
     }
 
-    // ────────────────────────────────────────────
-    // RF18 – Acompanhar Atividades de Estágio
-    // ────────────────────────────────────────────
-
     public function acompanharAtividades(Coordenador $coordenador, array $filtros = []): array
     {
-        $query = SolicitacaoEstagio::with(['aluno.user', 'atividades'])
+        // PERF-04: Otimizado com agregações SQL
+        $query = SolicitacaoEstagio::with(['aluno.user'])
             ->where('curso_id', $coordenador->curso_id)
-            ->where('status', 'aprovada');
+            ->where('status', 'aprovada')
+            ->withSum('atividades', 'horas')
+            ->withCount('atividades');
 
         if (isset($filtros['aluno_id'])) {
             $query->where('aluno_id', $filtros['aluno_id']);
@@ -229,54 +229,44 @@ class CoordenadorService
         return $estagios->map(function ($estagio) {
             return [
                 'estagio'            => $estagio,
-                'horas_cumpridas'    => $estagio->atividades->sum('horas'),
+                'horas_cumpridas'    => $estagio->atividades_sum_horas ?? 0,
                 'horas_totais'       => $estagio->carga_horaria_total,
                 'percentual'         => $estagio->carga_horaria_total > 0
-                    ? round(($estagio->atividades->sum('horas') / $estagio->carga_horaria_total) * 100, 1)
+                    ? round((($estagio->atividades_sum_horas ?? 0) / $estagio->carga_horaria_total) * 100, 1)
                     : 0,
-                'total_registros'    => $estagio->atividades->count(),
-                'ultimo_registro'    => $estagio->atividades->sortByDesc('data')->first(),
+                'total_registros'    => $estagio->atividades_count,
+                'ultimo_registro'    => $estagio->atividades()->latest('data')->first(),
             ];
         })->toArray();
     }
 
-    // ────────────────────────────────────────────
-    // RF19 – Consultar Pendências
-    // ────────────────────────────────────────────
-
     public function consultarPendencias(Coordenador $coordenador): array
     {
+        // PERF-01: Otimizado com count() em vez de get()
         return [
-            'solicitacoes_pendentes' => SolicitacaoEstagio::where('curso_id', $coordenador->curso_id)
+            'solicitacoes_pendentes_count' => SolicitacaoEstagio::where('curso_id', $coordenador->curso_id)
                 ->where('status', 'pendente')
-                ->with('aluno.user')
-                ->get(),
+                ->count(),
 
-            'documentos_pendentes' => Documento::whereHas('aluno', fn($q) => $q->where('curso_id', $coordenador->curso_id))
+            'documentos_pendentes_count' => Documento::whereHas('aluno', fn($q) => $q->where('curso_id', $coordenador->curso_id))
                 ->where('status', 'pendente')
-                ->with(['aluno.user', 'solicitacao'])
-                ->get(),
+                ->count(),
 
-            'avaliacoes_pendentes' => SolicitacaoEstagio::where('curso_id', $coordenador->curso_id)
+            'avaliacoes_pendentes_count' => SolicitacaoEstagio::where('curso_id', $coordenador->curso_id)
                 ->where('status', 'aprovada')
                 ->whereDoesntHave('avaliacao', fn($q) => $q->where('tipo', 'final'))
                 ->whereDate('data_fim_prevista', '<=', now()->addDays(30))
-                ->with('aluno.user')
-                ->get(),
+                ->count(),
         ];
     }
 
     private function contarPendencias(Coordenador $coordenador): int
     {
         $pendencias = $this->consultarPendencias($coordenador);
-        return $pendencias['solicitacoes_pendentes']->count()
-            + $pendencias['documentos_pendentes']->count()
-            + $pendencias['avaliacoes_pendentes']->count();
+        return $pendencias['solicitacoes_pendentes_count']
+            + $pendencias['documentos_pendentes_count']
+            + $pendencias['avaliacoes_pendentes_count'];
     }
-
-    // ────────────────────────────────────────────
-    // RF20 – Realizar Avaliações
-    // ────────────────────────────────────────────
 
     public function listarAvaliacoes(Coordenador $coordenador, array $filtros = []): LengthAwarePaginator
     {
@@ -290,6 +280,22 @@ class CoordenadorService
 
     public function registrarAvaliacao(Coordenador $coordenador, SolicitacaoEstagio $solicitacao, array $dados): Avaliacao
     {
+        // NEG-09: Verifica se já existe avaliação final
+        if ($dados['tipo'] === 'final') {
+            $avaliacaoExistente = Avaliacao::where('solicitacao_estagio_id', $solicitacao->id)
+                ->where('tipo', 'final')
+                ->exists();
+                
+            if ($avaliacaoExistente) {
+                abort(422, 'Já existe uma avaliação final registrada para este estágio.');
+            }
+            
+            // NEG-08: Verifica se contrato está encerrado para avaliação final
+            if ($solicitacao->data_fim_prevista->gt(now())) {
+                abort(422, 'A avaliação final só pode ser registrada após o término do estágio.');
+            }
+        }
+        
         $avaliacao = Avaliacao::create([
             'aluno_id'               => $solicitacao->aluno_id,
             'coordenador_id'         => $coordenador->id,
@@ -303,7 +309,6 @@ class CoordenadorService
             'data_avaliacao'         => $dados['data_avaliacao'] ?? now()->toDateString(),
         ]);
 
-        // Notificar aluno (RF12/RF21)
         $solicitacao->aluno->user->notify(
             new AlertaCoordenadorNotification("Avaliação {$dados['tipo']} registrada pelo coordenador.")
         );
@@ -317,10 +322,6 @@ class CoordenadorService
         return $avaliacao->fresh();
     }
 
-    // ────────────────────────────────────────────
-    // RF21 – Receber Alertas
-    // ────────────────────────────────────────────
-
     public function alertas(Coordenador $coordenador): Collection
     {
         return $coordenador->user->notifications()
@@ -333,10 +334,6 @@ class CoordenadorService
     {
         $coordenador->user->notifications()->where('id', $notificationId)->update(['read_at' => now()]);
     }
-
-    // ────────────────────────────────────────────
-    // RF22 – Gerar Relatórios
-    // ────────────────────────────────────────────
 
     public function gerarRelatorio(Coordenador $coordenador, string $tipo, array $filtros = []): array
     {
@@ -362,7 +359,7 @@ class CoordenadorService
             'tipo'       => 'alunos',
             'titulo'     => 'Relatório de Alunos — ' . $coordenador->curso->nome,
             'gerado_em'  => now(),
-            'coordenador' => $coordenador->nome,
+            'coordenador' => $coordenador->user->name,
             'dados'       => $alunos,
         ];
     }
@@ -380,25 +377,27 @@ class CoordenadorService
             'tipo'       => 'contratos',
             'titulo'     => 'Relatório de Contratos Ativos',
             'gerado_em'  => now(),
-            'coordenador' => $coordenador->nome,
+            'coordenador' => $coordenador->user->name,
             'dados'       => $contratos,
         ];
     }
 
     private function relatorioHoras(Coordenador $coordenador, array $filtros): array
     {
-        $estagios = SolicitacaoEstagio::with(['aluno.user', 'atividades'])
+        // PERF-02: Otimizado com paginação e agregações
+        $estagios = SolicitacaoEstagio::with(['aluno.user'])
             ->where('curso_id', $coordenador->curso_id)
             ->where('status', 'aprovada')
-            ->get()
-            ->map(fn($e) => [
+            ->withSum('atividades', 'horas')
+            ->paginate(20)
+            ->through(fn($e) => [
                 'aluno'           => $e->aluno->user->name,
                 'matricula'       => $e->aluno->matricula,
                 'empresa'         => $e->empresa->razao_social ?? '-',
                 'horas_previstas' => $e->carga_horaria_total,
-                'horas_cumpridas' => $e->atividades->sum('horas'),
+                'horas_cumpridas' => $e->atividades_sum_horas ?? 0,
                 'percentual'      => $e->carga_horaria_total > 0
-                    ? round(($e->atividades->sum('horas') / $e->carga_horaria_total) * 100, 1) . '%'
+                    ? round((($e->atividades_sum_horas ?? 0) / $e->carga_horaria_total) * 100, 1) . '%'
                     : '0%',
             ]);
 
@@ -406,7 +405,7 @@ class CoordenadorService
             'tipo'       => 'horas',
             'titulo'     => 'Relatório de Horas Cumpridas',
             'gerado_em'  => now(),
-            'coordenador' => $coordenador->nome,
+            'coordenador' => $coordenador->user->name,
             'dados'       => $estagios,
         ];
     }
@@ -423,7 +422,7 @@ class CoordenadorService
             'tipo'       => 'avaliacoes',
             'titulo'     => 'Relatório de Avaliações',
             'gerado_em'  => now(),
-            'coordenador' => $coordenador->nome,
+            'coordenador' => $coordenador->user->name,
             'dados'       => $avaliacoes,
         ];
     }

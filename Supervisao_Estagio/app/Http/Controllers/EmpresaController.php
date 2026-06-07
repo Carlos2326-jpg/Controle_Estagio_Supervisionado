@@ -16,269 +16,132 @@ class EmpresaController extends Controller
     public function __construct(EmpresaService $service)
     {
         $this->service = $service;
+        $this->middleware('auth:sanctum');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF24 – GERENCIAR EMPRESAS
-    |--------------------------------------------------------------------------
-    */
 
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Empresa::class);
         $empresas = $this->service->listar($request->only(['busca', 'status']));
-        return view('empresas.index', compact('empresas'));
+        return response()->json($empresas);
     }
 
-    public function create()
+    public function store(StoreEmpresaRequest $request)
     {
-        return view('empresas.create');
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'razao_social' => 'required|string|max:255',
-            'cnpj'         => 'required|string|size:18|unique:empresas,cnpj',
-            'email'        => 'required|email|max:255',
-            'telefone'     => 'nullable|string|max:20',
-            'cep'          => 'nullable|string|max:9',
-            'logradouro'   => 'nullable|string|max:255',
-            'numero'       => 'nullable|string|max:10',
-            'cidade'       => 'nullable|string|max:100',
-            'estado'       => 'nullable|string|size:2',
-        ]);
-
-        $empresa = $this->service->cadastrar($request->all());
-
-        return redirect()
-            ->route('empresas.show', $empresa)
-            ->with('sucesso', 'Empresa cadastrada com sucesso.');
+        $this->authorize('create', Empresa::class);
+        $empresa = $this->service->cadastrar($request->validated());
+        return response()->json($empresa, 201);
     }
 
     public function show(Empresa $empresa)
     {
+        $this->authorize('view', $empresa);
         $empresa = $this->service->consultar($empresa);
-        return view('empresas.show', compact('empresa'));
+        return response()->json($empresa);
     }
 
-    public function edit(Empresa $empresa)
+    public function update(UpdateEmpresaRequest $request, Empresa $empresa)
     {
-        return view('empresas.edit', compact('empresa'));
-    }
-
-    public function update(Request $request, Empresa $empresa)
-    {
-        $request->validate([
-            'razao_social' => 'required|string|max:255',
-            'email'        => 'required|email|max:255',
-            'cnpj'         => "required|string|size:18|unique:empresas,cnpj,{$empresa->id}",
-        ]);
-
-        $this->service->atualizar($empresa, $request->all());
-
-        return redirect()
-            ->route('empresas.show', $empresa)
-            ->with('sucesso', 'Empresa atualizada com sucesso.');
+        $this->authorize('update', $empresa);
+        $this->service->atualizar($empresa, $request->validated());
+        return response()->json(['message' => 'Empresa atualizada com sucesso.']);
     }
 
     public function desativar(Empresa $empresa)
     {
+        $this->authorize('update', $empresa);
         $this->service->desativar($empresa);
-        return redirect()->route('empresas.index')->with('sucesso', 'Empresa desativada.');
+        return response()->json(['message' => 'Empresa desativada.']);
     }
 
     public function reativar(Empresa $empresa)
     {
+        $this->authorize('update', $empresa);
         $this->service->reativar($empresa);
-        return redirect()->route('empresas.show', $empresa)->with('sucesso', 'Empresa reativada.');
+        return response()->json(['message' => 'Empresa reativada.']);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF25 – GERENCIAR CONVÊNIOS
-    |--------------------------------------------------------------------------
-    */
 
     public function convenios(Request $request, Empresa $empresa)
     {
+        $this->authorize('view', $empresa);
         $convenios = $this->service->listarConvenios($empresa, $request->only(['status']));
-        return view('convenios.index', compact('empresa', 'convenios'));
+        return response()->json($convenios);
     }
 
-    public function convenioCreate(Empresa $empresa)
+    public function convenioStore(StoreConvenioRequest $request, Empresa $empresa)
     {
-        return view('convenios.create', compact('empresa'));
+        $this->authorize('create', Convenio::class);
+        $this->service->cadastrarConvenio($empresa, $request->validated());
+        return response()->json(['message' => 'Convênio cadastrado com sucesso.'], 201);
     }
 
-    public function convenioStore(Request $request, Empresa $empresa)
+    public function convenioUpdate(UpdateConvenioRequest $request, Empresa $empresa, Convenio $convenio)
     {
-        $request->validate([
-            'numero_convenio' => 'required|string|unique:convenios,numero_convenio',
-            'data_inicio'     => 'required|date',
-            'data_fim'        => 'required|date|after:data_inicio',
-            'observacoes'     => 'nullable|string',
-        ]);
-
-        $this->service->cadastrarConvenio($empresa, $request->all());
-
-        return redirect()
-            ->route('empresas.convenios', $empresa)
-            ->with('sucesso', 'Convênio cadastrado com sucesso.');
+        $this->authorize('update', $convenio);
+        $this->service->atualizarConvenio($convenio, $request->validated());
+        return response()->json(['message' => 'Convênio atualizado com sucesso.']);
     }
-
-    public function convenioEdit(Empresa $empresa, Convenio $convenio)
-    {
-        return view('convenios.edit', compact('empresa', 'convenio'));
-    }
-
-    public function convenioUpdate(Request $request, Empresa $empresa, Convenio $convenio)
-    {
-        $request->validate([
-            'data_fim'   => 'required|date|after:data_inicio',
-            'status'     => 'required|in:ativo,inativo,vencido',
-            'observacoes' => 'nullable|string',
-        ]);
-
-        $this->service->atualizarConvenio($convenio, $request->all());
-
-        return redirect()
-            ->route('empresas.convenios', $empresa)
-            ->with('sucesso', 'Convênio atualizado com sucesso.');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF26 – GERENCIAR SUPERVISORES
-    |--------------------------------------------------------------------------
-    */
 
     public function supervisores(Request $request, Empresa $empresa)
     {
+        $this->authorize('view', $empresa);
         $supervisores = $this->service->listarSupervisores($empresa, $request->only(['status']));
-        return view('supervisores.index', compact('empresa', 'supervisores'));
+        return response()->json($supervisores);
     }
 
-    public function supervisorCreate(Empresa $empresa)
+    public function supervisorStore(StoreSupervisorRequest $request, Empresa $empresa)
     {
-        return view('supervisores.create', compact('empresa'));
+        $this->authorize('create', Supervisor::class);
+        $this->service->cadastrarSupervisor($empresa, $request->validated());
+        return response()->json(['message' => 'Supervisor cadastrado com sucesso.'], 201);
     }
 
-    public function supervisorStore(Request $request, Empresa $empresa)
+    public function supervisorUpdate(UpdateSupervisorRequest $request, Empresa $empresa, Supervisor $supervisor)
     {
-        $request->validate([
-            'nome'     => 'required|string|max:255',
-            'cargo'    => 'required|string|max:100',
-            'email'    => 'required|email|max:255',
-            'telefone' => 'nullable|string|max:20',
-            'cpf'      => 'nullable|string|max:14',
-            'formacao' => 'nullable|string|max:255',
-        ]);
-
-        $this->service->cadastrarSupervisor($empresa, $request->all());
-
-        return redirect()
-            ->route('empresas.supervisores', $empresa)
-            ->with('sucesso', 'Supervisor cadastrado com sucesso.');
-    }
-
-    public function supervisorEdit(Empresa $empresa, Supervisor $supervisor)
-    {
-        return view('supervisores.edit', compact('empresa', 'supervisor'));
-    }
-
-    public function supervisorUpdate(Request $request, Empresa $empresa, Supervisor $supervisor)
-    {
-        $request->validate([
-            'nome'  => 'required|string|max:255',
-            'cargo' => 'required|string|max:100',
-            'email' => 'required|email|max:255',
-        ]);
-
-        $this->service->atualizarSupervisor($supervisor, $request->all());
-
-        return redirect()
-            ->route('empresas.supervisores', $empresa)
-            ->with('sucesso', 'Supervisor atualizado com sucesso.');
+        $this->authorize('update', $supervisor);
+        $this->service->atualizarSupervisor($supervisor, $request->validated());
+        return response()->json(['message' => 'Supervisor atualizado com sucesso.']);
     }
 
     public function supervisorDesativar(Empresa $empresa, Supervisor $supervisor)
     {
+        $this->authorize('update', $supervisor);
         $this->service->desativarSupervisor($supervisor);
-        return redirect()
-            ->route('empresas.supervisores', $empresa)
-            ->with('sucesso', 'Supervisor desativado.');
+        return response()->json(['message' => 'Supervisor desativado.']);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF27 – RECEBER SOLICITAÇÕES DE ESTÁGIO
-    |--------------------------------------------------------------------------
-    */
 
     public function solicitacoes(Request $request, Empresa $empresa)
     {
+        $this->authorize('view', $empresa);
         $solicitacoes = $this->service->listarSolicitacoesRecebidas($empresa, $request->only(['status']));
-        return view('empresas.solicitacoes', compact('empresa', 'solicitacoes'));
+        return response()->json($solicitacoes);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF28 – PARTICIPAR DA FORMALIZAÇÃO DO CONTRATO
-    |--------------------------------------------------------------------------
-    */
 
     public function contrato(Empresa $empresa, SolicitacaoEstagio $solicitacao)
     {
+        $this->authorize('view', $empresa);
         $contrato = $this->service->consultarContrato($solicitacao);
-        return view('empresas.contrato', compact('empresa', 'solicitacao', 'contrato'));
+        return response()->json($contrato);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF29 – AVALIAR ESTAGIÁRIOS
-    |--------------------------------------------------------------------------
-    */
 
     public function avaliacoes(Request $request, Empresa $empresa, Supervisor $supervisor)
     {
+        $this->authorize('view', $supervisor);
         $avaliacoes = $this->service->listarAvaliacoes($supervisor);
-        return view('supervisores.avaliacoes', compact('empresa', 'supervisor', 'avaliacoes'));
+        return response()->json($avaliacoes);
     }
 
-    public function avaliacaoCreate(Empresa $empresa, Supervisor $supervisor, SolicitacaoEstagio $solicitacao)
+    public function avaliacaoStore(StoreAvaliacaoSupervisorRequest $request, Empresa $empresa, Supervisor $supervisor, SolicitacaoEstagio $solicitacao)
     {
-        return view('supervisores.avaliacao_create', compact('empresa', 'supervisor', 'solicitacao'));
+        $this->authorize('create', [AvaliacaoSupervisor::class, $supervisor]);
+        $this->service->registrarAvaliacao($supervisor, $solicitacao, $request->validated());
+        return response()->json(['message' => 'Avaliação registrada com sucesso.'], 201);
     }
-
-    public function avaliacaoStore(Request $request, Empresa $empresa, Supervisor $supervisor, SolicitacaoEstagio $solicitacao)
-    {
-        $request->validate([
-            'pontualidade'       => 'nullable|numeric|min:0|max:10',
-            'proatividade'       => 'nullable|numeric|min:0|max:10',
-            'qualidade_trabalho' => 'nullable|numeric|min:0|max:10',
-            'relacionamento'     => 'nullable|numeric|min:0|max:10',
-            'observacoes'        => 'nullable|string',
-            'data_avaliacao'     => 'required|date',
-        ]);
-
-        $this->service->registrarAvaliacao($supervisor, $solicitacao, $request->all());
-
-        return redirect()
-            ->route('empresas.supervisores.avaliacoes', [$empresa, $supervisor])
-            ->with('sucesso', 'Avaliação registrada com sucesso.');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RF30 – CONSULTAR ESTAGIÁRIOS VINCULADOS
-    |--------------------------------------------------------------------------
-    */
 
     public function estagiarios(Request $request, Empresa $empresa)
     {
+        $this->authorize('view', $empresa);
         $estagiarios = $this->service->listarEstagiarios($empresa, $request->only(['supervisor_id']));
-        $supervisores = $empresa->supervisores()->ativos()->get();
-        return view('empresas.estagiarios', compact('empresa', 'estagiarios', 'supervisores'));
+        return response()->json($estagiarios);
     }
 }
