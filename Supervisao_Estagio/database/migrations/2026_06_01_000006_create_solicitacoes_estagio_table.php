@@ -4,11 +4,11 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-// RF15, RF16 – Analisar Solicitações e Registrar Histórico
 return new class extends Migration
 {
     public function up(): void
     {
+        // Tabela de solicitações de estágio
         Schema::create('solicitacoes_estagio', function (Blueprint $table) {
             $table->id();
             $table->foreignId('aluno_id')->constrained()->onDelete('cascade');
@@ -29,9 +29,14 @@ return new class extends Migration
             ])->default('pendente');
             $table->timestamps();
             $table->softDeletes();
+            
+            // Índices para performance
+            $table->index('status');
+            $table->index('curso_id');
+            $table->index('aluno_id');
         });
 
-        // Histórico de análises (RF16)
+        // Tabela de histórico de análises
         Schema::create('historico_analises', function (Blueprint $table) {
             $table->id();
             $table->foreignId('solicitacao_estagio_id')->constrained()->onDelete('cascade');
@@ -40,6 +45,9 @@ return new class extends Migration
             $table->text('justificativa')->nullable();
             $table->timestamp('analisado_em');
             $table->timestamps();
+            
+            $table->index('solicitacao_estagio_id');
+            $table->index('coordenador_id');
         });
     }
 
