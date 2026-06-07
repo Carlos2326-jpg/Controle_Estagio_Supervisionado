@@ -3,14 +3,13 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Rules\ValidCpf;
 
-// RF01 – Gerenciar Dados do Aluno (validação de cadastro)
-// RNF04 – Validação automática de CPF, e-mails e campos obrigatórios
 class StoreAlunoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return auth()->check() && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('coordenador'));
     }
 
     public function rules(): array
@@ -18,13 +17,13 @@ class StoreAlunoRequest extends FormRequest
         return [
             'nome'            => 'required|string|max:255',
             'email'           => 'required|email|unique:users,email',
-            'cpf'             => 'required|string|size:11|unique:alunos,cpf',
+            'cpf'             => ['required', 'string', 'size:11', 'unique:alunos,cpf', new ValidCpf],
             'matricula'       => 'required|string|max:20|unique:alunos,matricula',
-            'curso_id'        => 'required|exists:cursos,id',
+            'curso_id'        => 'required|exists:cursos,id,ativo,1',
             'telefone'        => 'nullable|string|max:20',
             'data_nascimento' => 'nullable|date|before:today',
             'endereco'        => 'nullable|string|max:500',
-            'password'        => 'nullable|string|min:8',
+            'password'        => 'required|string|min:8',
         ];
     }
 
@@ -41,7 +40,9 @@ class StoreAlunoRequest extends FormRequest
             'matricula.required'  => 'A matrícula é obrigatória.',
             'matricula.unique'    => 'Esta matrícula já está cadastrada.',
             'curso_id.required'   => 'O curso é obrigatório.',
-            'curso_id.exists'     => 'O curso informado não existe.',
+            'curso_id.exists'     => 'O curso informado não existe ou está inativo.',
+            'password.required'   => 'A senha é obrigatória.',
+            'password.min'        => 'A senha deve ter no mínimo 8 caracteres.',
         ];
     }
 }
