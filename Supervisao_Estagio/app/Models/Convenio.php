@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-// RF25 – Gerenciar Convênios
 class Convenio extends Model
 {
     use HasFactory, SoftDeletes;
@@ -26,39 +25,24 @@ class Convenio extends Model
         'data_fim'    => 'date',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | RELACIONAMENTOS
-    |--------------------------------------------------------------------------
-    */
-
     public function empresa(): BelongsTo
     {
         return $this->belongsTo(Empresa::class);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | SCOPES
-    |--------------------------------------------------------------------------
-    */
 
     public function scopeAtivos($query)
     {
         return $query->where('status', 'ativo');
     }
 
+    // EXCEP-03: Corrigida lógica OR com agrupamento
     public function scopeVencidos($query)
     {
-        return $query->where('status', 'vencido')
-            ->orWhere('data_fim', '<', now());
+        return $query->where(function ($q) {
+            $q->where('status', 'vencido')
+                ->orWhere('data_fim', '<', now());
+        });
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | HELPERS
-    |--------------------------------------------------------------------------
-    */
 
     public function isAtivo(): bool
     {
@@ -72,6 +56,7 @@ class Convenio extends Model
 
     public function estaVencendo(int $diasAviso = 30): bool
     {
-        return $this->dias_para_vencimento <= $diasAviso && $this->dias_para_vencimento >= 0;
+        $dias = $this->dias_para_vencimento;
+        return $dias <= $diasAviso && $dias >= 0;
     }
 }
