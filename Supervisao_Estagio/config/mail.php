@@ -108,11 +108,19 @@ return [
     | the same address. Here you may specify a name and address that is
     | used globally for all emails that are sent by your application.
     |
+    | IMPORTANT: This value MUST be configured in your .env file for production.
+    | Leaving it as 'hello@example.com' will cause emails to be rejected by
+    | spam filters and may result in silent delivery failures.
+    |
+    | Required .env variables for production:
+    | MAIL_FROM_ADDRESS=contato@seudominio.com.br
+    | MAIL_FROM_NAME="Sistema de Estágios"
+    |
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+        'address' => env('MAIL_FROM_ADDRESS', 'noreply@example.com'),
+        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Sistema de Estágios')),
     ],
 
 ];
