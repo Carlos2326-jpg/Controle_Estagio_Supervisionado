@@ -2,201 +2,197 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Aluno;
-use App\Models\AtividadeEstagio;
-use App\Models\Contrato;
-use App\Models\Documento;
+use App\Models\Coordenador;
 use App\Models\SolicitacaoEstagio;
-use App\Http\Requests\StoreAlunoRequest;
-use App\Http\Requests\UpdateAlunoRequest;
-use App\Http\Requests\StoreSolicitacaoEstagioRequest;
-use App\Http\Requests\StoreAtividadeEstagioRequest;
-use App\Http\Requests\StoreDocumentoRequest;
-use App\Services\AlunoService;
+use App\Models\Documento;
+use App\Models\Avaliacao;
+use App\Http\Requests\StoreCoordenadorRequest;
+use App\Http\Requests\UpdateCoordenadorRequest;
+use App\Http\Requests\UpdateAvaliacaoRequest;
+use App\Services\CoordenadorService;
 use Illuminate\Http\Request;
+use App\Models\Instituicao;
 
-class AlunoController extends Controller
+class CoordenadorController extends Controller
 {
-    protected AlunoService $service;
+    protected $service;
 
-    public function __construct(AlunoService $service)
+    public function __construct(CoordenadorService $service)
     {
         $this->service = $service;
         $this->middleware('auth:sanctum');
-        $this->authorizeResource(Aluno::class, 'aluno');
     }
 
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Coordenador::class);
+        $coordenadores = $this->service->listar(
+            $request->only(['status', 'curso_id', 'busca'])
+        );
+
+        return response()->json($coordenadores);
+    }
+
+    public function store(StoreCoordenadorRequest $request)
+    {
+        $this->authorize('create', Coordenador::class);
+        $coordenador = $this->service->cadastrar($request->validated());
+
+        return response()->json($coordenador, 201);
+    }
+
+    public function inativar(Coordenador $coordenador)
+    {
+        $this->authorize('update', $coordenador);
+        $this->service->inativar($coordenador);
+        return response()->json(['message' => 'Coordenador inativado com sucesso.']);
+    }
+
+    public function informacoesAcademicas(Coordenador $coordenador)
+    {
+        $this->authorize('view', $coordenador);
         return response()->json(
-            $this->service->listar($request->only(['curso_id', 'situacao', 'ativo', 'busca']))
+            $this->service->consultarInformacoesAcademicas($coordenador)
         );
     }
 
-    public function store(StoreAlunoRequest $request)
+    public function listarSolicitacoes(Request $request, Coordenador $coordenador)
     {
+        $this->authorize('view', $coordenador);
         return response()->json(
-            $this->service->cadastrar($request->validated()),
+            $this->service->listarSolicitacoes($coordenador, $request->only(['status', 'busca']))
+        );
+    }
+
+    public function aprovarSolicitacao(Request $request, Coordenador $coordenador, SolicitacaoEstagio $solicitacao)
+    {
+        $this->authorize('aprovar', [$solicitacao, $coordenador]);
+        $this->service->aprovarSolicitacao($coordenador, $solicitacao, $request->justificativa);
+        return response()->json(['message' => 'Solicitação aprovada com sucesso.']);
+    }
+
+    public function reprovarSolicitacao(Request $request, Coordenador $coordenador, SolicitacaoEstagio $solicitacao)
+    {
+        $this->authorize('reprovar', [$solicitacao, $coordenador]);
+        $request->validate(['justificativa' => 'required|string']);
+        $this->service->reprovarSolicitacao($coordenador, $solicitacao, $request->justificativa);
+        return response()->json(['message' => 'Solicitação reprovada com sucesso.']);
+    }
+
+    public function historicoAnalises(Request $request, Coordenador $coordenador)
+    {
+        $this->authorize('view', $coordenador);
+        return response()->json(
+            $this->service->historicoAnalises($coordenador, $request->only(['decisao', 'data_inicio', 'data_fim']))
+        );
+    }
+
+    public function listarDocumentos(Request $request, Coordenador $coordenador)
+    {
+        $this->authorize('view', $coordenador);
+        return response()->json(
+            $this->service->listarDocumentos($coordenador, $request->only(['status', 'tipo']))
+        );
+    }
+
+    public function aprovarDocumento(Request $request, Coordenador $coordenador, Documento $documento)
+    {
+        $this->authorize('aprovar', [$documento, $coordenador]);
+        $this->service->aprovarDocumento($coordenador, $documento, $request->observacao);
+        return response()->json(['message' => 'Documento aprovado com sucesso.']);
+    }
+
+    public function reprovarDocumento(Request $request, Coordenador $coordenador, Documento $documento)
+    {
+        $this->authorize('reprovar', [$documento, $coordenador]);
+        $request->validate(['observacao' => 'required|string']);
+        $this->service->reprovarDocumento($coordenador, $documento, $request->observacao);
+        return response()->json(['message' => 'Documento reprovado com sucesso.']);
+    }
+
+    public function acompanharAtividades(Request $request, Coordenador $coordenador)
+    {
+        $this->authorize('view', $coordenador);
+        return response()->json(
+            $this->service->acompanharAtividades($coordenador, $request->only(['aluno_id']))
+        );
+    }
+
+    public function pendencias(Coordenador $coordenador)
+    {
+        $this->authorize('view', $coordenador);
+        return response()->json(
+            $this->service->consultarPendencias($coordenador)
+        );
+    }
+
+    public function listarAvaliacoes(Request $request, Coordenador $coordenador)
+    {
+        $this->authorize('view', $coordenador);
+        return response()->json(
+            $this->service->listarAvaliacoes($coordenador, $request->only(['tipo', 'conceito']))
+        );
+    }
+
+    public function registrarAvaliacao(Request $request, Coordenador $coordenador, SolicitacaoEstagio $solicitacao)
+    {
+        $this->authorize('create', [Avaliacao::class, $coordenador, $solicitacao]);
+        
+        $request->validate([
+            'tipo'            => 'required|in:parcial,final',
+            'parecer'         => 'required|string',
+            'nota'            => 'nullable|numeric|min:0|max:10|required_without:conceito',
+            'conceito'        => 'nullable|in:otimo,bom,regular,insuficiente|required_without:nota',
+            'pontos_fortes'   => 'nullable|string',
+            'pontos_melhoria' => 'nullable|string',
+            'data_avaliacao'  => 'nullable|date',
+        ]);
+
+        return response()->json(
+            $this->service->registrarAvaliacao($coordenador, $solicitacao, $request->all()),
             201
         );
     }
 
-    public function show(Aluno $aluno)
+    public function atualizarAvaliacao(UpdateAvaliacaoRequest $request, Coordenador $coordenador, Avaliacao $avaliacao)
     {
-        $this->authorize('view', $aluno);
+        $this->authorize('update', [$avaliacao, $coordenador]);
         return response()->json(
-            $aluno->load(['user', 'curso'])
+            $this->service->atualizarAvaliacao($avaliacao, $request->validated())
         );
     }
 
-    public function update(UpdateAlunoRequest $request, Aluno $aluno)
+    public function alertas(Coordenador $coordenador)
     {
-        $this->authorize('update', $aluno);
+        $this->authorize('view', $coordenador);
         return response()->json(
-            $this->service->atualizar($aluno, $request->validated())
+            $this->service->alertas($coordenador)
         );
     }
 
-    public function inativar(Aluno $aluno)
+    public function marcarAlertaLido(Request $request, Coordenador $coordenador)
     {
-        $this->authorize('inativar', $aluno);
-        $this->service->inativar($aluno);
-        return response()->json(['message' => 'Aluno inativado com sucesso.']);
-    }
-
-    public function situacaoEstagio(Aluno $aluno)
-    {
-        $this->authorize('view', $aluno);
-        return response()->json(
-            $this->service->consultarSituacao($aluno)
-        );
-    }
-
-    public function solicitarEstagio(StoreSolicitacaoEstagioRequest $request, Aluno $aluno)
-    {
-        $this->authorize('solicitarEstagio', $aluno);
-        return response()->json(
-            $this->service->solicitarEstagio($aluno, $request->validated()),
-            201
-        );
-    }
-
-    public function listarSolicitacoes(Request $request, Aluno $aluno)
-    {
-        $this->authorize('view', $aluno);
-        return response()->json(
-            $this->service->listarSolicitacoes($aluno, $request->only(['status']))
-        );
-    }
-
-    public function cancelarSolicitacao(Aluno $aluno, SolicitacaoEstagio $solicitacao)
-    {
-        $this->authorize('cancelar', $solicitacao);
-        $this->service->cancelarSolicitacao($aluno, $solicitacao);
-        return response()->json(['message' => 'Solicitação cancelada com sucesso.']);
-    }
-
-    public function listarContratos(Request $request, Aluno $aluno)
-    {
-        $this->authorize('view', $aluno);
-        return response()->json(
-            $this->service->listarContratos($aluno, $request->only(['status']))
-        );
-    }
-
-    public function visualizarContrato(Aluno $aluno, Contrato $contrato)
-    {
-        $this->authorize('view', $contrato);
-        return response()->json(
-            $this->service->visualizarContrato($aluno, $contrato)
-        );
-    }
-
-    public function listarAtividades(Request $request, Aluno $aluno)
-    {
-        $this->authorize('view', $aluno);
-        return response()->json(
-            $this->service->listarAtividades($aluno, $request->only([
-                'solicitacao_id', 'validado', 'data_inicio', 'data_fim',
-            ]))
-        );
-    }
-
-    public function registrarAtividade(StoreAtividadeEstagioRequest $request, Aluno $aluno)
-    {
-        $this->authorize('create', AtividadeEstagio::class);
-        return response()->json(
-            $this->service->registrarAtividade($aluno, $request->validated()),
-            201
-        );
-    }
-
-    public function atualizarAtividade(UpdateAtividadeEstagioRequest $request, Aluno $aluno, AtividadeEstagio $atividade)
-    {
-        $this->authorize('update', $atividade);
-        return response()->json(
-            $this->service->atualizarAtividade($aluno, $atividade, $request->validated())
-        );
-    }
-
-    public function excluirAtividade(Aluno $aluno, AtividadeEstagio $atividade)
-    {
-        $this->authorize('delete', $atividade);
-        $this->service->excluirAtividade($aluno, $atividade);
-        return response()->json(['message' => 'Registro de atividade excluído com sucesso.']);
-    }
-
-    public function enviarDocumento(StoreDocumentoRequest $request, Aluno $aluno)
-    {
-        $this->authorize('create', Documento::class);
-        return response()->json(
-            $this->service->enviarDocumento($aluno, $request->validated()),
-            201
-        );
-    }
-
-    public function listarDocumentos(Request $request, Aluno $aluno)
-    {
-        $this->authorize('view', $aluno);
-        return response()->json(
-            $this->service->listarDocumentos($aluno, $request->only(['status', 'tipo']))
-        );
-    }
-
-    public function listarAvaliacoes(Request $request, Aluno $aluno)
-    {
-        $this->authorize('view', $aluno);
-        return response()->json(
-            $this->service->listarAvaliacoes($aluno, $request->only(['tipo', 'conceito']))
-        );
-    }
-
-    public function alertas(Aluno $aluno)
-    {
-        $this->authorize('view', $aluno);
-        return response()->json(
-            $this->service->listarAlertas($aluno)
-        );
-    }
-
-    public function marcarAlertaLido(Request $request, Aluno $aluno)
-    {
-        $this->authorize('view', $aluno);
+        $this->authorize('view', $coordenador);
         $request->validate(['notification_id' => 'required|string']);
         
-        $notification = $aluno->user->notifications()->where('id', $request->notification_id)->first();
+        $notification = $coordenador->user->notifications()->where('id', $request->notification_id)->first();
         if (!$notification) {
             return response()->json(['message' => 'Notificação não encontrada.'], 404);
         }
         
-        $this->service->marcarAlertaLido($aluno, $request->notification_id);
+        $this->service->marcarAlertaLido($coordenador, $request->notification_id);
         return response()->json(['message' => 'Alerta marcado como lido.']);
     }
 
-    public function marcarTodosAlertasLidos(Aluno $aluno)
+    public function gerarRelatorio(Request $request, Coordenador $coordenador)
     {
-        $this->authorize('view', $aluno);
-        $this->service->marcarTodosAlertasLidos($aluno);
-        return response()->json(['message' => 'Todos os alertas marcados como lidos.']);
+        $this->authorize('view', $coordenador);
+        $request->validate([
+            'tipo' => 'required|in:alunos,contratos,horas,avaliacoes',
+        ]);
+
+        return response()->json(
+            $this->service->gerarRelatorio($coordenador, $request->tipo, $request->except('tipo'))
+        );
     }
 }
