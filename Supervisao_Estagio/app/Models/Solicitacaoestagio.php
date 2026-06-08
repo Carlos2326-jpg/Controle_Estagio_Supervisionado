@@ -5,24 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
-// RF15, RF16 – Analisar Solicitações / Histórico
 class SolicitacaoEstagio extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'solicitacoes_estagio';
-
     protected $fillable = [
         'aluno_id',
-        'empresa_id',
-        'supervisor_id',
-        'curso_id',
-        'data_inicio_prevista',
-        'data_fim_prevista',
+        'empresa',
+        'supervisor_nome',
+        'supervisor_email',
+        'data_inicio',
+        'data_fim',
         'carga_horaria_semanal',
         'carga_horaria_total',
         'descricao_atividades',
@@ -30,57 +24,29 @@ class SolicitacaoEstagio extends Model
     ];
 
     protected $casts = [
-        'data_inicio_prevista' => 'date',
-        'data_fim_prevista'    => 'date',
+        'data_inicio' => 'datetime',
+        'data_fim' => 'datetime',
+        'carga_horaria_semanal' => 'integer',
+        'carga_horaria_total' => 'integer',
     ];
 
-    // Relacionamentos
-    public function aluno(): BelongsTo
+    protected $table = 'solicitacoes_estagio';
+
+    public function aluno()
     {
         return $this->belongsTo(Aluno::class);
     }
 
-    public function empresa(): BelongsTo
-    {
-        return $this->belongsTo(Empresa::class);
-    }
-
-    public function supervisor(): BelongsTo
-    {
-        return $this->belongsTo(Supervisor::class);
-    }
-
-    public function curso(): BelongsTo
-    {
-        return $this->belongsTo(Curso::class);
-    }
-
-    public function historicoAnalises(): HasMany
-    {
-        return $this->hasMany(HistoricoAnalise::class);
-    }
-
-    public function contrato(): HasOne
-    {
-        return $this->hasOne(Contrato::class);
-    }
-
-    public function documentos(): HasMany
-    {
-        return $this->hasMany(Documento::class);
-    }
-
-    public function atividades(): HasMany
+    public function atividades()
     {
         return $this->hasMany(AtividadeEstagio::class);
     }
 
-    public function avaliacao(): HasOne
+    public function documentos()
     {
-        return $this->hasOne(Avaliacao::class);
+        return $this->hasMany(Documento::class);
     }
 
-    // Scopes
     public function scopePendentes($query)
     {
         return $query->where('status', 'pendente');
@@ -91,24 +57,13 @@ class SolicitacaoEstagio extends Model
         return $query->where('status', 'aprovada');
     }
 
-    public function scopePorCurso($query, int $cursoId)
-    {
-        return $query->where('curso_id', $cursoId);
-    }
-
-    // Helpers
-    public function isPendente(): bool
+    public function isPendente()
     {
         return $this->status === 'pendente';
     }
 
-    public function isAprovada(): bool
+    public function isAprovada()
     {
         return $this->status === 'aprovada';
-    }
-
-    public function getDuracaoEmDiasAttribute(): int
-    {
-        return $this->data_inicio_prevista->diffInDays($this->data_fim_prevista);
     }
 }
