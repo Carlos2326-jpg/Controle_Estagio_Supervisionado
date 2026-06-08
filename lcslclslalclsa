@@ -1,0 +1,19 @@
+*   [33m8b68c12[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/alunos[m[33m, [m[1;31morigin/feat/alunos[m[33m)[m merge: resolve conflito de rotas com a main
+[31m|[m[32m\[m  
+[31m|[m * [33m6b05a7d[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m feat(routes): adiciona rotas de cursos
+[31m|[m * [33m51d3009[m[33m ([m[1;31morigin/views_coordenadores[m[33m)[m feat: Coordenadores armazenando instituições nas views
+[31m|[m * [33m620d8f7[m feat: criação view coordenadores
+* [32m|[m [33m0799a2e[m feat(alunos): corrige views, services e controllers para alinhar com estrutura real do banco após merge
+* [32m|[m [33ma81d57b[m feat(alunos): instala Breeze mantendo rotas e layout
+* [32m|[m [33mcc560d4[m feat(alunos): alinha módulo com a arquitetura do projeto após merge com a main
+* [32m|[m [33m198b349[m merge: unifica modulo de alunos com a main e resolve conflitos estruturais
+[33m|[m[32m\[m[32m|[m 
+[33m|[m *   [33mc193f44[m fix(merge): resolve conflitos de migration e rotas
+[33m|[m [35m|[m[36m\[m  
+[33m|[m [35m|[m * [33m196ece3[m[33m ([m[1;31morigin/feat/cursos[m[33m)[m feat: implementa views e integração dos módulos de cursos, instituições, matrículas e relatórios
+[33m|[m [35m|[m * [33m20d0c57[m fix(migrations): reordena migrations para garantir ordem correta de dependencias
+[33m|[m [35m|[m * [33mbeba05f[m feat(instituicao): add entidade Instituição com CRUD, vínculos e relatório institucional
+[33m|[m [35m|[m * [33mfd98685[m feat(curso): implementa CRUD de cursos
+[33m|[m * [36m|[m [33mf77081e[m Renomeia arquivo de cursos em migration
+[33m|[m * [36m|[m [33m4592cc9[m fix(merge): resolve conflito de rotas entre feat/cursos e main
+[33m|[m [1;31m|[m[36m\[m[36m|[m 

@@ -22,7 +22,7 @@ class AlunoService
 
     public function listar(array $filtros = []): LengthAwarePaginator
     {
-        $query = Aluno::with(['user', 'cursoRelacionado'])
+        $query = Aluno::with(['user', 'curso'])
             ->when(isset($filtros['curso_id']), fn($q) => $q->where('curso_id', $filtros['curso_id']))
             ->when(isset($filtros['situacao']), fn($q) => $q->where('situacao_estagio', $filtros['situacao']))
             ->when(isset($filtros['ativo']), fn($q) => $q->where('ativo', $filtros['ativo']))
@@ -38,17 +38,17 @@ class AlunoService
 
     public function buscarPorUser(User $user): Aluno
     {
-        return Aluno::where('user_id', $user->id)->with(['user', 'cursoRelacionado'])->firstOrFail();
+        return Aluno::where('user_id', $user->id)->with(['user', 'curso'])->firstOrFail();
     }
 
     public function criar(array $dados): Aluno
     {
         return DB::transaction(function () use ($dados) {
             $user = User::create([
-                'name' => $dados['name'] ?? $dados['nome'],
-                'email' => $dados['email'],
+                'name'     => $dados['name'] ?? $dados['nome'],
+                'email'    => $dados['email'],
                 'password' => isset($dados['password']) ? Hash::make($dados['password']) : Hash::make('Estagio@2024'),
-                'perfil' => 'aluno',
+                'perfil'   => 'aluno',
             ]);
 
             if (method_exists($user, 'assignRole')) {
@@ -56,25 +56,20 @@ class AlunoService
             }
 
             return Aluno::create([
-                'user_id' => $user->id,
-                'curso_id' => $dados['curso_id'] ?? null,
-                'matricula' => $dados['matricula'],
-                'curso' => $dados['curso'] ?? null,
-                'periodo' => $dados['periodo'] ?? null,
-                'cpf' => $dados['cpf'] ?? null,
-                'telefone' => $dados['telefone'] ?? null,
-                'data_nascimento' => $dados['data_nascimento'] ?? null,
-                'endereco' => $dados['endereco'] ?? null,
-                'status_estagio' => 'pendente',
-                'situacao_estagio' => 'sem_estagio',
-                'carga_horaria_obrigatoria' => $dados['carga_horaria_obrigatoria'] ?? 0,
+                'user_id'                => $user->id,
+                'curso_id'               => $dados['curso_id'] ?? null,
+                'matricula'              => $dados['matricula'],
+                'cpf'                    => $dados['cpf'] ?? null,
+                'telefone'               => $dados['telefone'] ?? null,
+                'data_nascimento'        => $dados['data_nascimento'] ?? null,
+                'endereco'               => $dados['endereco'] ?? null,
+                'situacao_estagio'       => 'sem_estagio',
                 'carga_horaria_cumprida' => 0,
-                'ativo' => true,
+                'ativo'                  => true,
             ]);
         });
     }
 
-    // Alias para compatibilidade com o cadastro da Main
     public function cadastrar(array $dados): Aluno
     {
         return $this->criar($dados);
@@ -84,23 +79,21 @@ class AlunoService
     {
         DB::transaction(function () use ($aluno, $dados) {
             $aluno->user->update(array_filter([
-                'name' => $dados['name'] ?? $dados['nome'] ?? null,
+                'name'  => $dados['name'] ?? $dados['nome'] ?? null,
                 'email' => $dados['email'] ?? null,
             ]));
 
             $aluno->update(array_filter([
-                'curso_id' => $dados['curso_id'] ?? null,
-                'matricula' => $dados['matricula'] ?? null,
-                'curso' => $dados['curso'] ?? null,
-                'periodo' => $dados['periodo'] ?? null,
-                'telefone' => $dados['telefone'] ?? null,
+                'curso_id'        => $dados['curso_id'] ?? null,
+                'matricula'       => $dados['matricula'] ?? null,
+                'cpf'             => $dados['cpf'] ?? null,
+                'telefone'        => $dados['telefone'] ?? null,
                 'data_nascimento' => $dados['data_nascimento'] ?? null,
-                'endereco' => $dados['endereco'] ?? null,
-                'carga_horaria_obrigatoria' => $dados['carga_horaria_obrigatoria'] ?? null,
+                'endereco'        => $dados['endereco'] ?? null,
             ]));
-          });
+        });
 
-        return $aluno->fresh(['user', 'cursoRelacionado']);
+        return $aluno->fresh(['user', 'curso']);
     }
 
     public function inativar(Aluno $aluno): void

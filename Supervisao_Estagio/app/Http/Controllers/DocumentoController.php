@@ -33,7 +33,7 @@ class DocumentoController extends Controller
         $dados = $request->validate([
             'nome' => 'required|string|max:255',
             'tipo' => 'required|string|max:255',
-            'solicitacao_id' => 'nullable|exists:solicitacoes_estagio,id',
+            'solicitacao_estagio_id' => 'required|integer|exists:solicitacoes_estagio,id',
             'arquivo' => 'required|file|mimes:pdf,doc,docx,jpg,png|max:5120',
         ]);
 

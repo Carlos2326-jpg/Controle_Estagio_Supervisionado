@@ -16,8 +16,8 @@
                     <th class="px-4 py-3 text-left">Nome</th>
                     <th class="px-4 py-3 text-left">Matrícula</th>
                     <th class="px-4 py-3 text-left">Curso</th>
-                    <th class="px-4 py-3 text-left">Período</th>
-                    <th class="px-4 py-3 text-left">Status</th>
+                    <th class="px-4 py-3 text-left">Carga Horária</th>
+                    <th class="px-4 py-3 text-left">Situação</th>
                     <th class="px-4 py-3 text-left">Ações</th>
                 </tr>
             </thead>
@@ -26,9 +26,9 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3">{{ $aluno->user->name }}</td>
                         <td class="px-4 py-3">{{ $aluno->matricula }}</td>
-                        <td class="px-4 py-3">{{ $aluno->curso }}</td>
-                        <td class="px-4 py-3">{{ $aluno->periodo }}º</td>
-                        <td class="px-4 py-3">{{ $aluno->status_estagio }}</td>
+                        <td class="px-4 py-3">{{ $aluno->curso?->nome ?? 'Não informado' }}</td>
+                        <td class="px-4 py-3">{{ $aluno->carga_horaria_cumprida }}h</td>
+                        <td class="px-4 py-3">{{ ucfirst(str_replace('_', ' ', $aluno->situacao_estagio)) }}</td>
                         <td class="px-4 py-3 flex gap-2">
                             <a href="{{ route('alunos.show', $aluno) }}"
                               class="text-blue-600 hover:underline">Ver</a>

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Aluno;
-use App\Models\SolicitacaoEstagio;
+use App\Models\Curso;
 use App\Services\AlunoService;
 use Illuminate\Http\Request;
 
@@ -14,25 +14,25 @@ class AlunoController extends Controller
     public function index()
     {
         $alunos = $this->service->listar();
-
         return view('alunos.index', compact('alunos'));
     }
 
     public function create()
     {
-        return view('alunos.create');
+        $cursos = Curso::all();
+        return view('alunos.create', compact('cursos'));
     }
 
     public function store(Request $request)
     {
         $dados = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
+            'name'      => 'required|string|max:255',
+            'email'     => 'required|email|unique:users,email',
+            'password'  => 'required|string|min:8',
             'matricula' => 'required|string|unique:alunos,matricula',
-            'curso' => 'required|string|max:255',
-            'periodo' => 'required|integer|min:1|max:10',
-            'carga_horaria_obrigatoria' => 'required|integer|min:1',
+            'curso_id'  => 'required|exists:cursos,id',
+            'cpf'       => 'required|digits:11|unique:alunos,cpf',
+            'telefone'  => 'nullable|string|max:20',
         ]);
 
         $this->service->criar($dados);
@@ -43,30 +43,29 @@ class AlunoController extends Controller
     public function show(Aluno $aluno)
     {
         $aluno->load('user', 'solicitacoes', 'documentos');
-
         return view('alunos.show', compact('aluno'));
     }
 
     public function edit(Aluno $aluno)
     {
         $aluno->load('user');
-
-        return view('alunos.edit', compact('aluno'));
+        $cursos = Curso::all();
+        return view('alunos.edit', compact('aluno', 'cursos'));
     }
 
     public function update(Request $request, Aluno $aluno)
     {
         $dados = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $aluno->user_id,
+            'name'      => 'required|string|max:255',
+            'email'     => 'required|email|unique:users,email,' . $aluno->user_id,
             'matricula' => 'required|string|unique:alunos,matricula,' . $aluno->id,
-            'curso' => 'required|string|max:255',
-            'periodo' => 'required|integer|min:1|max:10',
-            'carga_horaria_obrigatoria' => 'required|integer|min:1',
+            'curso_id'  => 'required|exists:cursos,id',
+            'cpf'       => 'required|digits:11|unique:alunos,cpf,' . $aluno->id,
+            'telefone'  => 'nullable|string|max:20',
         ]);
 
         $this->service->atualizar($aluno, $dados);
 
-        return redirect()->route('alunos.show', $aluno)->with('sucesso', 'Dados updated com sucesso.');
+        return redirect()->route('alunos.show', $aluno)->with('sucesso', 'Dados atualizados com sucesso.');
     }
 }

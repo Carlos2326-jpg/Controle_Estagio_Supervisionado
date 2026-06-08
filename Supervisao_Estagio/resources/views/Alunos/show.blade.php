@@ -4,14 +4,8 @@
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Perfil do Aluno</h1>
         <div class="flex gap-2">
-            <a href="{{ route('alunos.edit', $aluno) }}"
-               class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 text-sm">
-                Editar
-            </a>
-            <a href="{{ route('alunos.index') }}"
-               class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 text-sm">
-                Voltar
-            </a>
+            <a href="{{ route('alunos.edit', $aluno) }}" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 text-sm">Editar</a>
+            <a href="{{ route('alunos.index') }}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 text-sm">Voltar</a>
         </div>
     </div>
 
@@ -33,11 +27,11 @@
                 </div>
                 <div>
                     <dt class="text-gray-500">Curso</dt>
-                    <dd class="font-medium text-gray-800">{{ $aluno->curso }}</dd>
+                    <dd class="font-medium text-gray-800">{{ $aluno->curso?->nome ?? 'Não informado' }}</dd>
                 </div>
                 <div>
-                    <dt class="text-gray-500">Período</dt>
-                    <dd class="font-medium text-gray-800">{{ $aluno->periodo }}º</dd>
+                    <dt class="text-gray-500">Telefone</dt>
+                    <dd class="font-medium text-gray-800">{{ $aluno->telefone ?? 'Não informado' }}</dd>
                 </div>
             </dl>
         </div>
@@ -47,11 +41,11 @@
             <dl class="space-y-3 text-sm">
                 <div>
                     <dt class="text-gray-500">Status</dt>
-                    <dd class="font-medium text-gray-800">{{ $aluno->status_estagio }}</dd>
+                    <dd class="font-medium text-gray-800">{{ str_replace('_', ' ', ucfirst($aluno->situacao_estagio)) }}</dd>
                 </div>
                 <div>
-                    <dt class="text-gray-500">Carga Horária Obrigatória</dt>
-                    <dd class="font-medium text-gray-800">{{ $aluno->carga_horaria_obrigatoria }}h</dd>
+                    <dt class="text-gray-500">Carga Horária do Curso</dt>
+                    <dd class="font-medium text-gray-800">{{ $aluno->curso?->carga_horaria_estagio ?? 0 }}h</dd>
                 </div>
                 <div>
                     <dt class="text-gray-500">Carga Horária Cumprida</dt>
@@ -64,18 +58,14 @@
     <div class="mt-6 bg-white rounded shadow p-6">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-gray-700">Solicitações</h2>
-            <a href="{{ route('solicitacoes.create') }}"
-               class="bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-sm">
-                Nova Solicitação
-            </a>
+            <a href="{{ route('solicitacoes.create') }}" class="bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-sm">Nova Solicitação</a>
         </div>
         @forelse($aluno->solicitacoes as $solicitacao)
             <div class="flex items-center justify-between py-2 border-b last:border-0 text-sm">
                 <span>{{ $solicitacao->empresa }}</span>
                 <span class="text-gray-500">{{ $solicitacao->data_inicio->format('d/m/Y') }}</span>
                 <span>{{ $solicitacao->status }}</span>
-                <a href="{{ route('solicitacoes.show', $solicitacao) }}"
-                   class="text-blue-600 hover:underline">Ver</a>
+                <a href="{{ route('solicitacoes.show', $solicitacao) }}" class="text-blue-600 hover:underline">Ver</a>
             </div>
         @empty
             <p class="text-gray-400 text-sm">Nenhuma solicitação registrada.</p>
@@ -85,18 +75,14 @@
     <div class="mt-6 bg-white rounded shadow p-6">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-gray-700">Documentos</h2>
-            <a href="{{ route('documentos.create') }}"
-               class="bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-sm">
-                Enviar Documento
-            </a>
+            <a href="{{ route('documentos.create') }}" class="bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-sm">Enviar Documento</a>
         </div>
         @forelse($aluno->documentos as $documento)
             <div class="flex items-center justify-between py-2 border-b last:border-0 text-sm">
                 <span>{{ $documento->nome }}</span>
                 <span class="text-gray-500">{{ $documento->tipo }}</span>
                 <span>{{ $documento->status }}</span>
-                <a href="{{ route('documentos.show', $documento) }}"
-                   class="text-blue-600 hover:underline">Ver</a>
+                <a href="{{ route('documentos.show', $documento) }}" class="text-blue-600 hover:underline">Ver</a>
             </div>
         @empty
             <p class="text-gray-400 text-sm">Nenhum documento enviado.</p>
