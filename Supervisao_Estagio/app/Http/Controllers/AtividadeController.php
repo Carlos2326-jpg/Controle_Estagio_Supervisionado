@@ -33,16 +33,14 @@ class AtividadeController extends Controller
     public function store(Request $request)
     {
         $dados = $request->validate([
-            'solicitacao_id' => 'required|exists:solicitacoes_estagio,id',
-            'data_atividade' => 'required|date',
-            'hora_inicio' => 'required',
-            'hora_fim' => 'required|after:hora_inicio',
-            'horas_computadas' => 'required|numeric|min:0.1|max:99.99',
-            'descricao' => 'required|string',
+            'solicitacao_estagio_id' => 'required|exists:solicitacoes_estagio,id',
+            'data'                   => 'required|date',
+            'horas'                  => 'required|numeric|min:0.1|max:99.99',
+            'descricao'              => 'required|string',
         ]);
 
         $aluno = Auth::user()->aluno;
-        $solicitacao = SolicitacaoEstagio::findOrFail($dados['solicitacao_id']);
+        $solicitacao = SolicitacaoEstagio::findOrFail($dados['solicitacao_estagio_id']);
         $this->service->criar($aluno, $solicitacao, $dados);
 
         return redirect()->route('atividades.index')->with('sucesso', 'Atividade registrada com sucesso.');

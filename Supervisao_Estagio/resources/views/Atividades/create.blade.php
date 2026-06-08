@@ -12,52 +12,34 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Solicitação</label>
-                    <select name="solicitacao_id"
+                    <select name="solicitacao_estagio_id"
                             class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Selecione</option>
                         @foreach($solicitacoes as $solicitacao)
-                            <option value="{{ $solicitacao->id }}" {{ old('solicitacao_id') == $solicitacao->id ? 'selected' : '' }}>
+                            <option value="{{ $solicitacao->id }}" {{ old('solicitacao_estagio_id') == $solicitacao->id ? 'selected' : '' }}>
                                 {{ $solicitacao->empresa }} — {{ $solicitacao->data_inicio->format('d/m/Y') }}
                             </option>
                         @endforeach
                     </select>
-                    @error('solicitacao_id')
+                    @error('solicitacao_estagio_id')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Data da Atividade</label>
-                    <input type="date" name="data_atividade" value="{{ old('data_atividade') }}"
+                    <input type="date" name="data" value="{{ old('data') }}"
                            class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    @error('data_atividade')
+                    @error('data')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Horas Computadas</label>
-                    <input type="number" name="horas_computadas" value="{{ old('horas_computadas') }}" step="0.1" min="0.1"
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Horas</label>
+                    <input type="number" name="horas" value="{{ old('horas') }}" step="0.1" min="0.1" max="99.99"
                            class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    @error('horas_computadas')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Hora Início</label>
-                    <input type="time" name="hora_inicio" value="{{ old('hora_inicio') }}"
-                           class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    @error('hora_inicio')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Hora Fim</label>
-                    <input type="time" name="hora_fim" value="{{ old('hora_fim') }}"
-                           class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    @error('hora_fim')
+                    @error('horas')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>

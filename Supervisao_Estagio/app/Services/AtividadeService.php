@@ -11,23 +11,22 @@ class AtividadeService
     public function listarPorAluno(Aluno $aluno)
     {
         return AtividadeEstagio::where('aluno_id', $aluno->id)
-            ->orderBy('data_atividade', 'desc')
+            ->orderBy('data', 'desc')
             ->paginate(20);
     }
 
     public function criar(Aluno $aluno, SolicitacaoEstagio $solicitacao, array $dados)
     {
         $atividade = AtividadeEstagio::create([
-            'aluno_id' => $aluno->id,
-            'solicitacao_id' => $solicitacao->id,
-            'data_atividade' => $dados['data_atividade'],
-            'hora_inicio' => $dados['hora_inicio'],
-            'hora_fim' => $dados['hora_fim'],
-            'horas_computadas' => $dados['horas_computadas'],
-            'descricao' => $dados['descricao'],
+            'aluno_id'               => $aluno->id,
+            'solicitacao_estagio_id' => $solicitacao->id,
+            'data'                   => $dados['data'],
+            'horas'                  => $dados['horas'],
+            'descricao'              => $dados['descricao'],
+            'validado_supervisor'    => false,
         ]);
 
-        $aluno->increment('carga_horaria_cumprida', $atividade->horas_computadas);
+        $aluno->increment('carga_horaria_cumprida', $atividade->horas);
 
         return $atividade;
     }
@@ -45,7 +44,7 @@ class AtividadeService
     {
         abort_if(!$atividade->podeEditar(), 403, 'Esta atividade já foi validada e não pode ser excluída.');
 
-        $atividade->aluno->decrement('carga_horaria_cumprida', $atividade->horas_computadas);
+        $atividade->aluno->decrement('carga_horaria_cumprida', $atividade->horas);
 
         $atividade->delete();
     }

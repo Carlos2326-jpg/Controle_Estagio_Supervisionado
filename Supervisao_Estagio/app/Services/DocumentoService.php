@@ -22,7 +22,7 @@ class DocumentoService
 
         return Documento::create([
             'aluno_id' => $aluno->id,
-            'solicitacao_id' => $dados['solicitacao_id'] ?? null,
+            'solicitacao_estagio_id' => $dados['solicitacao_estagio_id'] ?? null,
             'nome' => $dados['nome'],
             'tipo' => $dados['tipo'],
             'caminho_arquivo' => $caminho,
