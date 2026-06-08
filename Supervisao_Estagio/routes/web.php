@@ -105,8 +105,13 @@ Route::prefix('empresas')->name('empresas.')->group(function () {
 // ==================== COORDENADORES ====================
 Route::prefix('coordenadores')->group(function () {
     Route::get('/', [CoordenadorController::class, 'index']);
+
+    Route::get('/criar', [CoordenadorController::class, 'create']);
     Route::post('/', [CoordenadorController::class, 'store']);
+
+    Route::get('/{coordenador}/editar', [CoordenadorController::class, 'edit']);
     Route::put('/{coordenador}', [CoordenadorController::class, 'update']);
+    
     Route::patch('/{coordenador}/inativar', [CoordenadorController::class, 'inativar']);
     Route::get('/{coordenador}/informacoes-academicas', [CoordenadorController::class, 'informacoesAcademicas']);
     Route::get('/{coordenador}/solicitacoes', [CoordenadorController::class, 'listarSolicitacoes']);
@@ -127,24 +132,20 @@ Route::prefix('coordenadores')->group(function () {
     Route::post('/{id}/vincular-curso', [CoordenadorController::class, 'vincularCurso']);
 });
 
-// ==================== MATRÍCULAS ====================
-Route::prefix('cursos/{curso}/matriculas')->name('matriculas.')->group(function () {
-    Route::get('/', [MatriculaController::class, 'index'])->name('index');
-    Route::get('/buscar', [MatriculaController::class, 'buscar'])->name('buscar');
-    Route::get('/{aluno}/historico', [MatriculaController::class, 'historico'])->name('historico');
-    Route::get('/alertas/sem-horas', [MatriculaController::class, 'alunosSemHoras'])->name('alertas');
+Route::prefix('cursos/{curso}/matriculas')->group(function () {
+    Route::get('/', [MatriculaController::class, 'index']);
+    Route::get('/buscar', [MatriculaController::class, 'buscar']);
+    Route::get('/{aluno}/historico', [MatriculaController::class, 'historico']);
+    Route::get('/alertas/sem-horas', [MatriculaController::class, 'alunosSemHoras']);
 });
 
-// ==================== RELATÓRIOS ====================
-Route::prefix('coordenadores/{coordenador}/relatorios')->name('relatorios.')->group(function () {
-    Route::get('/alunos', [RelatorioController::class, 'alunos'])->name('alunos');
-    Route::get('/contratos', [RelatorioController::class, 'contratos'])->name('contratos');
-    Route::get('/horas', [RelatorioController::class, 'horas'])->name('horas');
-    Route::get('/avaliacoes', [RelatorioController::class, 'avaliacoes'])->name('avaliacoes');
-    Route::get('/exportar-pdf', [RelatorioController::class, 'exportarPdf'])->name('pdf');
+Route::prefix('coordenadores/{coordenador}/relatorios')->group(function () {
+    Route::get('/alunos', [RelatorioController::class, 'alunos']);
+    Route::get('/contratos', [RelatorioController::class, 'contratos']);
+    Route::get('/horas', [RelatorioController::class, 'horas']);
+    Route::get('/avaliacoes', [RelatorioController::class, 'avaliacoes']);
+    Route::get('/exportar-pdf', [RelatorioController::class, 'exportarPdf']);
 });
-
-// ==================== CURSOS ====================
 Route::prefix('cursos')->name('cursos.')->group(function () {
     Route::get('/', [CursoController::class, 'index'])->name('index');
     Route::get('/create', [CursoController::class, 'create'])->name('create');

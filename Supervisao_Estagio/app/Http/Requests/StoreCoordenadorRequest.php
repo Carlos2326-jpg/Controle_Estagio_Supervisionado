@@ -30,6 +30,7 @@ class StoreCoordenadorRequest extends FormRequest
             'matricula_institucional' => 'required|string|max:30|unique:coordenadores,matricula_institucional',
             'telefone'              => 'nullable|string|max:20',
             'data_inicio_funcao'    => 'required|date',
+            'instituicao_id' => 'required|exists:instituicoes,id',
         ];
     }
 

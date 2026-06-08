@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Coordenador extends Model {
+    protected $table = 'coordenadores';
     use HasFactory;
 
     protected $fillable = [
         'user_id',
         'matricula',
         'departamento',
+        'instituicao_id',
         'ativo'
     ];
 
@@ -59,5 +61,10 @@ class Coordenador extends Model {
             Avaliacao::class,
             'avaliador_id'
         );
+    }
+
+    public function instituicao()
+    {
+        return $this->belongsTo(Instituicao::class);
     }
 }

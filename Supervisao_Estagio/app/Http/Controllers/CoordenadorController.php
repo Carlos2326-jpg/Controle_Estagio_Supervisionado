@@ -9,6 +9,7 @@ use App\Models\Avaliacao;
 use App\Http\Requests\StoreCoordenadorRequest;
 use App\Services\CoordenadorService;
 use Illuminate\Http\Request;
+use App\Models\Instituicao;
 
 
 class CoordenadorController extends Controller
@@ -28,23 +29,40 @@ class CoordenadorController extends Controller
 
     public function index(Request $request)
     {
-        return response()->json(
-            $this->service->listar($request->only(['status', 'curso_id', 'busca']))
+        $coordenadores = $this->service->listar(
+            $request->only(['status', 'curso_id', 'busca'])
         );
+
+        return view('coordenadores.index', compact('coordenadores'));
     }
 
     public function store(StoreCoordenadorRequest $request)
     {
-        return response()->json(
-            $this->service->cadastrar($request->validated()),
-            201
+        $coordenador = $this->service->cadastrar(
+            $request->validated()
+        );
+
+        return redirect('/coordenadores')
+            ->with('sucesso', 'Coordenador cadastrado com sucesso.');
+    }
+
+    public function create()
+    {
+        $instituicoes = Instituicao::all();
+
+        return view(
+            'coordenadores.create',
+            compact('instituicoes')
         );
     }
 
-    public function update(Request $request, Coordenador $coordenador)
+    public function edit(Coordenador $coordenador)
     {
-        return response()->json(
-            $this->service->atualizar($coordenador, $request->all())
+        $instituicoes = Instituicao::all();
+
+        return view(
+            'coordenadores.edit',
+            compact('coordenador', 'instituicoes')
         );
     }
 
