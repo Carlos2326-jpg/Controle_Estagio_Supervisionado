@@ -8,13 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Tabela de solicitações de estágio
         Schema::create('solicitacoes_estagio', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('aluno_id')->constrained()->onDelete('cascade');
-            $table->foreignId('empresa_id')->constrained()->onDelete('cascade');
-            $table->foreignId('supervisor_id')->constrained()->onDelete('cascade');
-            $table->foreignId('curso_id')->constrained()->onDelete('cascade');
+            $table->foreignId('aluno_id')->constrained('alunos')->onDelete('cascade');
+            $table->foreignId('empresa_id')->constrained('empresas')->onDelete('cascade');
+            $table->foreignId('supervisor_id')->constrained('supervisores')->onDelete('cascade');
+            $table->foreignId('curso_id')->constrained('cursos')->onDelete('cascade');
             $table->date('data_inicio_prevista');
             $table->date('data_fim_prevista');
             $table->integer('carga_horaria_semanal');
@@ -30,17 +29,17 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
             
-            // Índices para performance
             $table->index('status');
             $table->index('curso_id');
             $table->index('aluno_id');
+            $table->index(['empresa_id', 'status']);
+            $table->index(['aluno_id', 'status']);
         });
 
-        // Tabela de histórico de análises
         Schema::create('historico_analises', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('solicitacao_estagio_id')->constrained()->onDelete('cascade');
-            $table->foreignId('coordenador_id')->constrained()->onDelete('cascade');
+            $table->foreignId('solicitacao_estagio_id')->constrained('solicitacoes_estagio')->onDelete('cascade');
+            $table->foreignId('coordenador_id')->constrained('coordenadores')->onDelete('cascade');
             $table->enum('decisao', ['aprovada', 'reprovada']);
             $table->text('justificativa')->nullable();
             $table->timestamp('analisado_em');

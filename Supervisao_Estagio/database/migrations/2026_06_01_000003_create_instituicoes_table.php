@@ -20,40 +20,12 @@ return new class extends Migration
             $table->string('email_contato', 200)->nullable();
             $table->string('site', 200)->nullable();
             $table->boolean('ativa')->default(true);
-            $table->timestamps(); // created_at e updated_at apenas - sem data_cadastro duplicado
-        });
-
-        // Adiciona FK id_instituicao na tabela cursos
-        Schema::table('cursos', function (Blueprint $table) {
-            $table->foreignId('id_instituicao')
-                ->nullable()
-                ->after('id')
-                ->constrained('instituicoes')
-                ->onDelete('restrict');
-        });
-
-        // Adiciona FK id_instituicao na tabela coordenadores
-        Schema::table('coordenadores', function (Blueprint $table) {
-            $table->foreignId('id_instituicao')
-                ->nullable()
-                ->after('id')
-                ->constrained('instituicoes')
-                ->onDelete('restrict');
+            $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::table('coordenadores', function (Blueprint $table) {
-            $table->dropForeign(['id_instituicao']);
-            $table->dropColumn('id_instituicao');
-        });
-
-        Schema::table('cursos', function (Blueprint $table) {
-            $table->dropForeign(['id_instituicao']);
-            $table->dropColumn('id_instituicao');
-        });
-
         Schema::dropIfExists('instituicoes');
     }
 };

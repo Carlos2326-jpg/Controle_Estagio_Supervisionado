@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->enum('role', ['admin', 'coordenador', 'aluno', 'empresa'])
-                  ->default('aluno')
-                  ->after('email');
+                ->default('aluno')
+                ->after('email');
         });
     }
 

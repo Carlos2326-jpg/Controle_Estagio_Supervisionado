@@ -4,14 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-// RF24 – Gerenciar Empresas
-// RF25 – Gerenciar Convênios
-// RF26 – Gerenciar Supervisores
 return new class extends Migration
 {
     public function up(): void
     {
-        // RF24 – Empresas concedentes de estágio
         Schema::create('empresas', function (Blueprint $table) {
             $table->id();
             $table->string('razao_social');
@@ -32,7 +28,6 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        // RF25 – Convênios vinculados às empresas
         Schema::create('convenios', function (Blueprint $table) {
             $table->id();
             $table->foreignId('empresa_id')->constrained('empresas')->onDelete('cascade');
@@ -43,9 +38,11 @@ return new class extends Migration
             $table->text('observacoes')->nullable();
             $table->timestamps();
             $table->softDeletes();
+            
+            $table->index(['empresa_id', 'status']);
+            $table->index('data_fim');
         });
 
-        // RF26 – Supervisores das empresas
         Schema::create('supervisores', function (Blueprint $table) {
             $table->id();
             $table->foreignId('empresa_id')->constrained('empresas')->onDelete('cascade');
@@ -58,6 +55,9 @@ return new class extends Migration
             $table->enum('status', ['ativo', 'inativo'])->default('ativo');
             $table->timestamps();
             $table->softDeletes();
+            
+            $table->index(['empresa_id', 'status']);
+            $table->index('email');
         });
     }
 
