@@ -23,8 +23,8 @@ class EmpresaService
             ->when(isset($filtros['status']), fn($q) => $q->where('status', $filtros['status']))
             ->when(isset($filtros['busca']), function ($q) use ($filtros) {
                 $q->where('razao_social', 'like', "%{$filtros['busca']}%")
-                  ->orWhere('nome_fantasia', 'like', "%{$filtros['busca']}%")
-                  ->orWhere('cnpj', 'like', "%{$filtros['busca']}%");
+                    ->orWhere('nome_fantasia', 'like', "%{$filtros['busca']}%")
+                    ->orWhere('cnpj', 'like', "%{$filtros['busca']}%");
             });
 
         return $query->orderBy('razao_social')->paginate(20);

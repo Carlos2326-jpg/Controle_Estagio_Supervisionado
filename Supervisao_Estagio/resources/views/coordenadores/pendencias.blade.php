@@ -2,12 +2,10 @@
 
 <ul>
 
-@foreach($pendencias as $pendencia)
-
-<li>
-    {{ $pendencia }}
-</li>
-
-@endforeach
+    @foreach ($pendencias as $pendencia)
+        <li>
+            {{ $pendencia }}
+        </li>
+    @endforeach
 
 </ul>

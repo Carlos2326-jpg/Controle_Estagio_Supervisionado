@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Controller;
 use App\Models\Coordenador;
 use App\Models\SolicitacaoEstagio;
 use App\Models\Documento;

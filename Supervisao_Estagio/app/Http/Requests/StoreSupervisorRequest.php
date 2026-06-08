@@ -9,7 +9,13 @@ class StoreSupervisorRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check() && auth()->user()->hasRole('empresa');
+        $user = $this->user();
+        $empresa = $this->route('empresa');
+
+        if (!$user) return false;
+
+        return $user->hasRole('admin') ||
+            ($user->hasRole('empresa') && $empresa->user_id === $user->id);
     }
 
     public function rules(): array
@@ -17,9 +23,9 @@ class StoreSupervisorRequest extends FormRequest
         return [
             'nome'      => 'required|string|max:255',
             'cargo'     => 'required|string|max:100',
-            'email'     => 'required|email|max:255',
+            'email'     => 'required|email|max:255|unique:supervisores,email',
             'telefone'  => 'nullable|string|max:20',
-            'cpf'       => ['nullable', 'string', 'max:14', new ValidCpf],
+            'cpf'       => ['nullable', 'string', 'max:14', 'unique:supervisores,cpf', new ValidCpf],
             'formacao'  => 'nullable|string|max:255',
             'status'    => 'sometimes|in:ativo,inativo',
         ];
@@ -32,6 +38,8 @@ class StoreSupervisorRequest extends FormRequest
             'cargo.required' => 'O cargo é obrigatório.',
             'email.required' => 'O e-mail é obrigatório.',
             'email.email'    => 'Informe um e-mail válido.',
+            'email.unique'   => 'Este e-mail já está cadastrado.',
+            'cpf.unique'     => 'Este CPF já está cadastrado.',
         ];
     }
 }

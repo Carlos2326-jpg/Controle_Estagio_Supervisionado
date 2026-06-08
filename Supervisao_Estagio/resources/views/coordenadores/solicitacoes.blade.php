@@ -2,57 +2,55 @@
 
 <table>
 
-<thead>
-<tr>
-    <th>Aluno</th>
-    <th>Empresa</th>
-    <th>Status</th>
-    <th>Ações</th>
-</tr>
-</thead>
+    <thead>
+        <tr>
+            <th>Aluno</th>
+            <th>Empresa</th>
+            <th>Status</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
 
-<tbody>
+    <tbody>
 
-@foreach($solicitacoes as $solicitacao)
+        @foreach ($solicitacoes as $solicitacao)
+            <tr>
 
-<tr>
+                <td>{{ $solicitacao->aluno->nome }}</td>
 
-<td>{{ $solicitacao->aluno->nome }}</td>
+                <td>{{ $solicitacao->empresa->razao_social }}</td>
 
-<td>{{ $solicitacao->empresa->razao_social }}</td>
+                <td>{{ $solicitacao->status }}</td>
 
-<td>{{ $solicitacao->status }}</td>
+                <td>
 
-<td>
+                    <form method="POST"
+                        action="/coordenadores/{{ $coordenador->id }}/solicitacoes/{{ $solicitacao->id }}/aprovar">
+                        @csrf
+                        @method('PATCH')
 
-<form method="POST"
-      action="/coordenadores/{{ $coordenador->id }}/solicitacoes/{{ $solicitacao->id }}/aprovar">
-    @csrf
-    @method('PATCH')
+                        <button type="submit">
+                            Aprovar
+                        </button>
+                    </form>
 
-    <button type="submit">
-        Aprovar
-    </button>
-</form>
+                    <form method="POST"
+                        action="/coordenadores/{{ $coordenador->id }}/solicitacoes/{{ $solicitacao->id }}/reprovar">
+                        @csrf
+                        @method('PATCH')
 
-<form method="POST"
-      action="/coordenadores/{{ $coordenador->id }}/solicitacoes/{{ $solicitacao->id }}/reprovar">
-    @csrf
-    @method('PATCH')
+                        <input type="text" name="justificativa">
 
-    <input type="text" name="justificativa">
+                        <button type="submit">
+                            Reprovar
+                        </button>
+                    </form>
 
-    <button type="submit">
-        Reprovar
-    </button>
-</form>
+                </td>
 
-</td>
+            </tr>
+        @endforeach
 
-</tr>
-
-@endforeach
-
-</tbody>
+    </tbody>
 
 </table>

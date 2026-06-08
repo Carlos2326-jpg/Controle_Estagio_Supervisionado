@@ -9,20 +9,21 @@ class StoreCoordenadorRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check() && auth()->user()->hasRole('admin');
+        $user = $this->user();
+        return $user && $user->hasRole('admin');
     }
 
     public function rules(): array
     {
         return [
-            'nome'                  => 'required|string|max:150',
-            'email'                 => 'required|email|max:200|unique:users,email',
-            'password'              => 'required|string|min:8|confirmed',
-            'curso_id'              => 'required|integer|exists:cursos,id,ativo,1',
+            'nome'                   => 'required|string|max:150',
+            'email'                  => 'required|email|max:200|unique:users,email',
+            'password'               => 'required|string|min:8|confirmed',
+            'curso_id'               => 'required|integer|exists:cursos,id,ativo,1',
             'matricula_institucional' => 'required|string|max:30|unique:coordenadores,matricula_institucional',
-            'telefone'              => 'nullable|string|max:20',
-            'data_inicio_funcao'    => 'required|date',
-            'instituicao_id'        => 'required|exists:instituicoes,id,ativa,1',
+            'telefone'               => 'nullable|string|max:20',
+            'data_inicio_funcao'     => 'required|date',
+            'instituicao_id'         => 'required|exists:instituicoes,id,ativa,1',
         ];
     }
 

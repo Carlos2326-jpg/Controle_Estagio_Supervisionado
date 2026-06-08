@@ -6,7 +6,7 @@ use App\Models\Curso;
 use App\Models\Aluno;
 use Illuminate\Http\Request;
 
-class MatriculaController extends Controller
+class MatriculaController
 {
     /*
     |--------------------------------------------------------------------------

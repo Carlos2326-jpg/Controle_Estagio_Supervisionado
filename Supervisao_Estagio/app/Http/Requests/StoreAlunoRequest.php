@@ -4,12 +4,14 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use App\Rules\ValidCpf;
+use Illuminate\Validation\Rule;
 
 class StoreAlunoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check() && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('coordenador'));
+        $user = $this->user();
+        return $user && ($user->hasRole('admin') || $user->hasRole('coordenador'));
     }
 
     public function rules(): array
@@ -23,7 +25,7 @@ class StoreAlunoRequest extends FormRequest
             'telefone'        => 'nullable|string|max:20',
             'data_nascimento' => 'nullable|date|before:today',
             'endereco'        => 'nullable|string|max:500',
-            'password'        => 'required|string|min:8',
+            'password'        => 'required|string|min:8|confirmed',
         ];
     }
 
@@ -32,7 +34,6 @@ class StoreAlunoRequest extends FormRequest
         return [
             'nome.required'       => 'O nome do aluno é obrigatório.',
             'email.required'      => 'O e-mail é obrigatório.',
-            'email.email'         => 'Informe um e-mail válido.',
             'email.unique'        => 'Este e-mail já está cadastrado.',
             'cpf.required'        => 'O CPF é obrigatório.',
             'cpf.size'            => 'O CPF deve conter 11 dígitos.',
@@ -43,6 +44,7 @@ class StoreAlunoRequest extends FormRequest
             'curso_id.exists'     => 'O curso informado não existe ou está inativo.',
             'password.required'   => 'A senha é obrigatória.',
             'password.min'        => 'A senha deve ter no mínimo 8 caracteres.',
+            'password.confirmed'  => 'A confirmação da senha não corresponde.',
         ];
     }
 }

@@ -25,9 +25,11 @@ class AlunoService
             ->when(isset($filtros['situacao']), fn($q) => $q->where('situacao_estagio', $filtros['situacao']))
             ->when(isset($filtros['ativo']), fn($q) => $q->where('ativo', $filtros['ativo']))
             ->when(isset($filtros['busca']), function ($q) use ($filtros) {
-                $q->whereHas('user', fn($u) =>
+                $q->whereHas(
+                    'user',
+                    fn($u) =>
                     $u->where('name', 'like', "%{$filtros['busca']}%")
-                      ->orWhere('email', 'like', "%{$filtros['busca']}%")
+                        ->orWhere('email', 'like', "%{$filtros['busca']}%")
                 )->orWhere('matricula', 'like', "%{$filtros['busca']}%");
             });
 
@@ -111,12 +113,12 @@ class AlunoService
         if ($aluno->temSolicitacaoPendente()) {
             abort(422, 'Você já possui uma solicitação de estágio pendente.');
         }
-        
+
         // NEG-04: Verifica se o aluno já está em estágio
         if ($aluno->situacao_estagio === 'em_andamento') {
             abort(422, 'Você já possui um estágio em andamento.');
         }
-        
+
         // Verifica se a empresa possui convênio ativo (NEG-05)
         $empresa = \App\Models\Empresa::findOrFail($dados['empresa_id']);
         if (!$empresa->possuiConvenioAtivo()) {
@@ -207,7 +209,7 @@ class AlunoService
         $horasSemanaAtual = AtividadeEstagio::where('solicitacao_estagio_id', $solicitacao->id)
             ->whereBetween('data', [$inicioSemana, $fimSemana])
             ->sum('horas');
-        
+
         if (($horasSemanaAtual + $dados['horas']) > $solicitacao->carga_horaria_semanal) {
             abort(422, "A carga horária semanal não pode exceder {$solicitacao->carga_horaria_semanal} horas.");
         }
@@ -241,7 +243,7 @@ class AlunoService
         if (isset($dados['data'])) $updateData['data'] = $dados['data'];
         if (isset($dados['descricao'])) $updateData['descricao'] = $dados['descricao'];
         if (isset($dados['horas'])) $updateData['horas'] = $dados['horas'];
-        
+
         $atividade->update($updateData);
 
         $this->recalcularCargaHoraria($aluno);
@@ -270,16 +272,24 @@ class AlunoService
     {
         return AtividadeEstagio::with('solicitacao')
             ->where('aluno_id', $aluno->id)
-            ->when(isset($filtros['solicitacao_id']), fn($q) =>
+            ->when(
+                isset($filtros['solicitacao_id']),
+                fn($q) =>
                 $q->where('solicitacao_estagio_id', $filtros['solicitacao_id'])
             )
-            ->when(isset($filtros['validado']), fn($q) =>
+            ->when(
+                isset($filtros['validado']),
+                fn($q) =>
                 $q->where('validado_supervisor', filter_var($filtros['validado'], FILTER_VALIDATE_BOOLEAN))
             )
-            ->when(isset($filtros['data_inicio']), fn($q) =>
+            ->when(
+                isset($filtros['data_inicio']),
+                fn($q) =>
                 $q->whereDate('data', '>=', $filtros['data_inicio'])
             )
-            ->when(isset($filtros['data_fim']), fn($q) =>
+            ->when(
+                isset($filtros['data_fim']),
+                fn($q) =>
                 $q->whereDate('data', '<=', $filtros['data_fim'])
             )
             ->orderBy('data', 'desc')

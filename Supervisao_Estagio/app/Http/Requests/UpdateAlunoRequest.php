@@ -9,19 +9,20 @@ class UpdateAlunoRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        $user = $this->user();
         $aluno = $this->route('aluno');
-        
-        return auth()->check() && (
-            auth()->user()->hasRole('admin') ||
-            auth()->user()->hasRole('coordenador') ||
-            (auth()->user()->hasRole('aluno') && auth()->id() === $aluno->user_id)
-        );
+
+        if (!$user) return false;
+
+        return $user->hasRole('admin') ||
+            $user->hasRole('coordenador') ||
+            ($user->hasRole('aluno') && $user->id === $aluno->user_id);
     }
 
     public function rules(): array
     {
         $aluno = $this->route('aluno');
-        
+
         return [
             'nome'            => 'sometimes|string|max:255',
             'email'           => [

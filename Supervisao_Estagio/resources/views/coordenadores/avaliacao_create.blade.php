@@ -1,25 +1,20 @@
 <h1>Registrar Avaliação</h1>
 
-<form method="POST"
-      action="/coordenadores/{{ $coordenador->id }}/avaliacoes/{{ $solicitacao->id }}">
+<form method="POST" action="/coordenadores/{{ $coordenador->id }}/avaliacoes/{{ $solicitacao->id }}">
 
-@csrf
+    @csrf
 
-<select name="tipo">
-    <option value="parcial">Parcial</option>
-    <option value="final">Final</option>
-</select>
+    <select name="tipo">
+        <option value="parcial">Parcial</option>
+        <option value="final">Final</option>
+    </select>
 
-<textarea name="parecer"></textarea>
+    <textarea name="parecer"></textarea>
 
-<input type="number"
-       step="0.1"
-       min="0"
-       max="10"
-       name="nota">
+    <input type="number" step="0.1" min="0" max="10" name="nota">
 
-<button type="submit">
-    Salvar
-</button>
+    <button type="submit">
+        Salvar
+    </button>
 
 </form>

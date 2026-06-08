@@ -3,26 +3,20 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreSolicitacaoEstagioRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check() && auth()->user()->hasRole('aluno');
+        $user = $this->user();
+        return $user && $user->hasRole('aluno');
     }
 
     public function rules(): array
     {
         return [
-            'empresa_id'            => [
-                'required',
-                'exists:empresas,id,status,ativa',
-            ],
-            'supervisor_id'         => [
-                'required',
-                'exists:supervisores,id,status,ativo',
-            ],
+            'empresa_id'            => 'required|exists:empresas,id,status,ativa',
+            'supervisor_id'         => 'required|exists:supervisores,id,status,ativo',
             'data_inicio_prevista'  => 'required|date|after_or_equal:today',
             'data_fim_prevista'     => 'required|date|after:data_inicio_prevista',
             'carga_horaria_semanal' => 'required|integer|min:1|max:44',
@@ -36,8 +30,7 @@ class StoreSolicitacaoEstagioRequest extends FormRequest
         $validator->after(function ($validator) {
             $empresaId = $this->input('empresa_id');
             $supervisorId = $this->input('supervisor_id');
-            
-            // Verifica se o supervisor pertence à empresa informada
+
             if ($empresaId && $supervisorId) {
                 $supervisor = \App\Models\Supervisor::find($supervisorId);
                 if ($supervisor && $supervisor->empresa_id != $empresaId) {

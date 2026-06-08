@@ -2,17 +2,17 @@
 
 <form method="GET">
 
-<select name="tipo">
+    <select name="tipo">
 
-    <option value="alunos">Alunos</option>
-    <option value="contratos">Contratos</option>
-    <option value="horas">Horas</option>
-    <option value="avaliacoes">Avaliações</option>
+        <option value="alunos">Alunos</option>
+        <option value="contratos">Contratos</option>
+        <option value="horas">Horas</option>
+        <option value="avaliacoes">Avaliações</option>
 
-</select>
+    </select>
 
-<button>
-    Gerar
-</button>
+    <button>
+        Gerar
+    </button>
 
 </form>

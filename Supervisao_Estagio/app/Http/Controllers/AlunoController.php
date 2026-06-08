@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Controller;
 use App\Models\Aluno;
 use App\Models\AtividadeEstagio;
 use App\Models\Contrato;
@@ -9,6 +10,7 @@ use App\Models\Documento;
 use App\Models\SolicitacaoEstagio;
 use App\Http\Requests\StoreAlunoRequest;
 use App\Http\Requests\UpdateAlunoRequest;
+use App\Http\Requests\UpdateAtividadeEstagioRequest;
 use App\Http\Requests\StoreSolicitacaoEstagioRequest;
 use App\Http\Requests\StoreAtividadeEstagioRequest;
 use App\Http\Requests\StoreDocumentoRequest;

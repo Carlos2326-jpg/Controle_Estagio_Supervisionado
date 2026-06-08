@@ -10,18 +10,19 @@ class UpdateEmpresaRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        $user = $this->user();
         $empresa = $this->route('empresa');
-        
-        return auth()->check() && (
-            auth()->user()->hasRole('admin') ||
-            (auth()->user()->hasRole('empresa') && $empresa->user_id === auth()->id())
-        );
+
+        if (!$user) return false;
+
+        return $user->hasRole('admin') ||
+            ($user->hasRole('empresa') && $empresa->user_id === $user->id);
     }
 
     public function rules(): array
     {
         $empresa = $this->route('empresa');
-        
+
         return [
             'razao_social'   => 'sometimes|string|max:255',
             'nome_fantasia'  => 'nullable|string|max:255',

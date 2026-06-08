@@ -9,19 +9,20 @@ class UpdateConvenioRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        $user = $this->user();
         $convenio = $this->route('convenio');
         $empresa = $this->route('empresa');
-        
-        return auth()->check() && (
-            auth()->user()->hasRole('admin') ||
-            (auth()->user()->hasRole('empresa') && $convenio->empresa_id === $empresa->id)
-        );
+
+        if (!$user) return false;
+
+        return $user->hasRole('admin') ||
+            ($user->hasRole('empresa') && $convenio->empresa_id === $empresa->id);
     }
 
     public function rules(): array
     {
         $convenio = $this->route('convenio');
-        
+
         return [
             'numero_convenio' => [
                 'sometimes',

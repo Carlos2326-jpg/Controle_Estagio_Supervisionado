@@ -1,53 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            color: #333;
-        }
-        .cabecalho {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-        }
-        .cabecalho h2 {
-            margin: 0;
-            font-size: 16px;
-        }
-        .cabecalho p {
-            margin: 4px 0;
-            font-size: 11px;
-            color: #555;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        table th {
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            padding: 6px 8px;
-            text-align: left;
-            font-size: 11px;
-        }
-        table td {
-            border: 1px solid #ccc;
-            padding: 6px 8px;
-            font-size: 11px;
-        }
-        .rodape {
-            margin-top: 20px;
-            font-size: 10px;
-            color: #888;
-            text-align: right;
-        }
-    </style>
 </head>
+
 <body>
 
     <div class="cabecalho">
@@ -57,7 +14,7 @@
         <p>Gerado em: {{ $gerado_em }}</p>
     </div>
 
-    @if($tipo === 'alunos')
+    @if ($tipo === 'alunos')
         <table>
             <thead>
                 <tr>
@@ -69,18 +26,17 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($dados['dados'] as $aluno)
-                <tr>
-                    <td>{{ $aluno->user->name ?? '-' }}</td>
-                    <td>{{ $aluno->matricula }}</td>
-                    <td>{{ $aluno->periodo_atual }}</td>
-                    <td>{{ $aluno->situacao_estagio }}</td>
-                    <td>{{ $aluno->horas_cumpridas }}</td>
-                </tr>
+                @foreach ($dados['dados'] as $aluno)
+                    <tr>
+                        <td>{{ $aluno->user->name ?? '-' }}</td>
+                        <td>{{ $aluno->matricula }}</td>
+                        <td>{{ $aluno->periodo_atual }}</td>
+                        <td>{{ $aluno->situacao_estagio }}</td>
+                        <td>{{ $aluno->horas_cumpridas }}</td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>
-
     @elseif($tipo === 'contratos')
         <table>
             <thead>
@@ -93,18 +49,17 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($dados['dados'] as $contrato)
-                <tr>
-                    <td>{{ $contrato->aluno->user->name ?? '-' }}</td>
-                    <td>{{ $contrato->empresa->razao_social ?? '-' }}</td>
-                    <td>{{ $contrato->data_inicio_prevista }}</td>
-                    <td>{{ $contrato->data_fim_prevista }}</td>
-                    <td>{{ $contrato->status }}</td>
-                </tr>
+                @foreach ($dados['dados'] as $contrato)
+                    <tr>
+                        <td>{{ $contrato->aluno->user->name ?? '-' }}</td>
+                        <td>{{ $contrato->empresa->razao_social ?? '-' }}</td>
+                        <td>{{ $contrato->data_inicio_prevista }}</td>
+                        <td>{{ $contrato->data_fim_prevista }}</td>
+                        <td>{{ $contrato->status }}</td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>
-
     @elseif($tipo === 'horas')
         <table>
             <thead>
@@ -118,19 +73,18 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($dados['dados'] as $item)
-                <tr>
-                    <td>{{ $item['aluno'] }}</td>
-                    <td>{{ $item['matricula'] }}</td>
-                    <td>{{ $item['empresa'] }}</td>
-                    <td>{{ $item['horas_previstas'] }}</td>
-                    <td>{{ $item['horas_cumpridas'] }}</td>
-                    <td>{{ $item['percentual'] }}</td>
-                </tr>
+                @foreach ($dados['dados'] as $item)
+                    <tr>
+                        <td>{{ $item['aluno'] }}</td>
+                        <td>{{ $item['matricula'] }}</td>
+                        <td>{{ $item['empresa'] }}</td>
+                        <td>{{ $item['horas_previstas'] }}</td>
+                        <td>{{ $item['horas_cumpridas'] }}</td>
+                        <td>{{ $item['percentual'] }}</td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>
-
     @elseif($tipo === 'avaliacoes')
         <table>
             <thead>
@@ -144,15 +98,15 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($dados['dados'] as $avaliacao)
-                <tr>
-                    <td>{{ $avaliacao->aluno->user->name ?? '-' }}</td>
-                    <td>{{ $avaliacao->tipo }}</td>
-                    <td>{{ $avaliacao->nota ?? '-' }}</td>
-                    <td>{{ $avaliacao->conceito ?? '-' }}</td>
-                    <td>{{ $avaliacao->parecer }}</td>
-                    <td>{{ $avaliacao->data_avaliacao }}</td>
-                </tr>
+                @foreach ($dados['dados'] as $avaliacao)
+                    <tr>
+                        <td>{{ $avaliacao->aluno->user->name ?? '-' }}</td>
+                        <td>{{ $avaliacao->tipo }}</td>
+                        <td>{{ $avaliacao->nota ?? '-' }}</td>
+                        <td>{{ $avaliacao->conceito ?? '-' }}</td>
+                        <td>{{ $avaliacao->parecer }}</td>
+                        <td>{{ $avaliacao->data_avaliacao }}</td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>
@@ -163,4 +117,5 @@
     </div>
 
 </body>
+
 </html>

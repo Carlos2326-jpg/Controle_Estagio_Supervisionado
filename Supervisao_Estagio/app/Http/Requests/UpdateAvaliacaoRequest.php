@@ -8,12 +8,14 @@ class UpdateAvaliacaoRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        $user = $this->user();
         $avaliacao = $this->route('avaliacao');
         $coordenador = $this->route('coordenador');
-        
-        return auth()->check() && 
-               auth()->user()->hasRole('coordenador') &&
-               $avaliacao->coordenador_id === $coordenador->id;
+
+        if (!$user) return false;
+
+        return $user->hasRole('coordenador') &&
+            $avaliacao->coordenador_id === $coordenador->id;
     }
 
     public function rules(): array

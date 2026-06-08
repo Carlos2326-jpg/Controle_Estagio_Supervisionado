@@ -11,9 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 // RF26 – Gerenciar Supervisores
 class Supervisor extends Model
 {
-     use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes;
 
-    protected $table = 'supervisores'; 
+    protected $table = 'supervisores';
 
     protected $fillable = [
         'empresa_id',

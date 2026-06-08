@@ -2,11 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use Controller;
 use App\Models\Empresa;
 use App\Models\Convenio;
 use App\Models\Supervisor;
 use App\Models\SolicitacaoEstagio;
+use App\Models\AvaliacaoSupervisor;  // ← ADICIONE ESTA LINHA!
 use App\Services\EmpresaService;
+use App\Http\Requests\UpdateEmpresaRequest;
+use App\Http\Requests\StoreEmpresaRequest;
+use App\Http\Requests\UpdateConvenioRequest;
+use App\Http\Requests\StoreConvenioRequest;
+use App\Http\Requests\UpdateSupervisorRequest;
+use App\Http\Requests\StoreSupervisorRequest;
+use App\Http\Requests\StoreAvaliacaoSupervisorRequest;
 use Illuminate\Http\Request;
 
 class EmpresaController extends Controller

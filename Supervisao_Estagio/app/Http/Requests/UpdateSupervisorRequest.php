@@ -10,19 +10,20 @@ class UpdateSupervisorRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        $user = $this->user();
         $supervisor = $this->route('supervisor');
         $empresa = $this->route('empresa');
-        
-        return auth()->check() && (
-            auth()->user()->hasRole('admin') ||
-            (auth()->user()->hasRole('empresa') && $supervisor->empresa_id === $empresa->id)
-        );
+
+        if (!$user) return false;
+
+        return $user->hasRole('admin') ||
+            ($user->hasRole('empresa') && $supervisor->empresa_id === $empresa->id);
     }
 
     public function rules(): array
     {
         $supervisor = $this->route('supervisor');
-        
+
         return [
             'nome'      => 'sometimes|string|max:255',
             'cargo'     => 'sometimes|string|max:100',

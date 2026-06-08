@@ -1,13 +1,12 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\Models\Instituicao;
 use App\Http\Requests\StoreInstituicaoRequest;
 use App\Services\InstituicaoService;
 use Illuminate\Http\Request;
 
-class InstituicaoController extends Controller
+class InstituicaoController
 {
     protected InstituicaoService $service;
 

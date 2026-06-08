@@ -10,7 +10,8 @@ class StoreInstituicaoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check() && auth()->user()->hasRole('admin');
+        $user = $this->user();
+        return $user && $user->hasRole('admin');
     }
 
     public function rules(): array
@@ -54,6 +55,7 @@ class StoreInstituicaoRequest extends FormRequest
             'endereco.required'         => 'O endereço é obrigatório.',
             'cidade.required'           => 'A cidade é obrigatória.',
             'estado.required'           => 'O estado (UF) é obrigatório.',
+            'estado.size'               => 'O estado deve ser informado como UF (2 letras).',
             'email_contato.email'       => 'Informe um e-mail de contato válido.',
             'site.url'                  => 'Informe uma URL válida para o site.',
         ];

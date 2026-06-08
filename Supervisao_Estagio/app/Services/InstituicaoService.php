@@ -27,9 +27,11 @@ class InstituicaoService
             ->when(isset($filtros['ativa']), fn($q) => $q->where('ativa', $filtros['ativa']))
             ->when(isset($filtros['cidade']),  fn($q) => $q->where('cidade', $filtros['cidade']))
             ->when(isset($filtros['estado']),  fn($q) => $q->where('estado', $filtros['estado']))
-            ->when(isset($filtros['busca']), fn($q) =>
+            ->when(
+                isset($filtros['busca']),
+                fn($q) =>
                 $q->where('nome_instituicao', 'like', "%{$filtros['busca']}%")
-                  ->orWhere('sigla', 'like', "%{$filtros['busca']}%")
+                    ->orWhere('sigla', 'like', "%{$filtros['busca']}%")
             )
             ->orderBy('nome_instituicao')
             ->paginate(20);
@@ -206,7 +208,12 @@ class InstituicaoService
 
         return [
             'instituicao'   => $instituicao->only([
-                'id', 'nome_instituicao', 'sigla', 'cidade', 'estado', 'ativa',
+                'id',
+                'nome_instituicao',
+                'sigla',
+                'cidade',
+                'estado',
+                'ativa',
             ]),
             'cursos'        => $cursos,
             'coordenadores' => $coordenadores,

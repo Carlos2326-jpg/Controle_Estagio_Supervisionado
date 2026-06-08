@@ -8,12 +8,14 @@ class UpdateAtividadeEstagioRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        $user = $this->user();
         $atividade = $this->route('atividade');
-        
-        return auth()->check() && 
-               auth()->user()->hasRole('aluno') && 
-               $atividade->aluno->user_id === auth()->id() &&
-               !$atividade->validado_supervisor;
+
+        if (!$user) return false;
+
+        return $user->hasRole('aluno') &&
+            $atividade->aluno->user_id === $user->id &&
+            !$atividade->validado_supervisor;
     }
 
     public function rules(): array

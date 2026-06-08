@@ -6,7 +6,7 @@ use App\Models\Curso;
 use App\Services\CursoService;
 use Illuminate\Http\Request;
 
-class CursoController extends Controller
+class CursoController
 {
     public function __construct(
         protected CursoService $service

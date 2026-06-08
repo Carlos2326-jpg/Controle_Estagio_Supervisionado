@@ -8,7 +8,8 @@ class StoreAtividadeEstagioRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check() && auth()->user()->hasRole('aluno');
+        $user = $this->user();
+        return $user && $user->hasRole('aluno');
     }
 
     public function rules(): array
