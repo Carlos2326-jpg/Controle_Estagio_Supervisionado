@@ -54,27 +54,6 @@ class Instituicao extends Model
         return $query->where('estado', $uf);
     }
 
-    // INT-06: Verificação completa de vínculos ativos
-    public function possuiVinculosAtivos(): bool
-    {
-        // Verifica cursos com alunos ativos
-        $cursosComAlunosAtivos = $this->cursos()
-            ->whereHas('alunos', fn($q) => $q->where('ativo', true))
-            ->exists();
-            
-        // Verifica cursos com estágios em andamento
-        $cursosComEstagiosAtivos = $this->cursos()
-            ->whereHas('alunos', fn($q) => $q->where('situacao_estagio', 'em_andamento'))
-            ->exists();
-            
-        // Verifica coordenadores ativos
-        $coordenadoresAtivos = $this->coordenadores()
-            ->where('status', 'ativo')
-            ->exists();
-            
-        return $cursosComAlunosAtivos || $cursosComEstagiosAtivos || $coordenadoresAtivos;
-    }
-
     // PERF-03: Otimizado com eager loading
     public function getTotalAlunosAtivosAttribute(): int
     {

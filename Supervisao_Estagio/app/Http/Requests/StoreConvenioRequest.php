@@ -1,4 +1,5 @@
 <?php
+// app/Http/Requests/StoreConvenioRequest.php
 
 namespace App\Http\Requests;
 
@@ -8,23 +9,24 @@ class StoreConvenioRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        // CORRETO: Em FormRequest, $this->user() existe
         $user = $this->user();
         $empresa = $this->route('empresa');
 
         if (!$user) return false;
 
         return $user->hasRole('admin') ||
-            ($user->hasRole('empresa') && $empresa->user_id === $user->id);
+            ($user->hasRole('empresa') && $empresa && $empresa->user_id === $user->id);
     }
 
     public function rules(): array
     {
         return [
-            'numero_convenio' => 'required|string|unique:convenios,numero_convenio',
-            'data_inicio'     => 'required|date',
-            'data_fim'        => 'required|date|after:data_inicio',
-            'status'          => 'sometimes|in:ativo,inativo,vencido',
-            'observacoes'     => 'nullable|string',
+            'numero_convenio' => 'required|string|max:50|unique:convenios,numero_convenio',
+            'data_inicio' => 'required|date',
+            'data_fim' => 'required|date|after:data_inicio',
+            'status' => 'sometimes|in:ativo,inativo,vencido',
+            'observacoes' => 'nullable|string|max:1000',
         ];
     }
 
@@ -32,10 +34,12 @@ class StoreConvenioRequest extends FormRequest
     {
         return [
             'numero_convenio.required' => 'O número do convênio é obrigatório.',
-            'numero_convenio.unique'   => 'Este número de convênio já está cadastrado.',
-            'data_inicio.required'     => 'A data de início é obrigatória.',
-            'data_fim.required'        => 'A data de fim é obrigatória.',
-            'data_fim.after'           => 'A data de fim deve ser posterior à data de início.',
+            'numero_convenio.max' => 'O número do convênio não pode exceder 50 caracteres.',
+            'numero_convenio.unique' => 'Este número de convênio já está cadastrado.',
+            'data_inicio.required' => 'A data de início é obrigatória.',
+            'data_fim.required' => 'A data de fim é obrigatória.',
+            'data_fim.after' => 'A data de fim deve ser posterior à data de início.',
+            'observacoes.max' => 'As observações não podem exceder 1000 caracteres.',
         ];
     }
 }

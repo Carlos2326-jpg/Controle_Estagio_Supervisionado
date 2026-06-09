@@ -2,17 +2,24 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 
-class LoginController
+class LoginController extends Controller
 {
+    /**
+     * Mostrar o formulário de login
+     */
     public function showLoginForm()
     {
         return view('auth.login');
     }
 
+    /**
+     * Processar o login
+     */
     public function login(Request $request)
     {
         $request->validate([
@@ -35,18 +42,22 @@ class LoginController
             RateLimiter::clear($key);
             $request->session()->regenerate();
 
-            // Redireciona baseado no role do usuário (verificação direta)
+            // Obtém o usuário autenticado
             $user = Auth::user();
             
-            // Verificação direta sem método hasRole
-            if ($user->role === 'admin') {
-                return redirect()->intended('/admin/dashboard');
-            } elseif ($user->role === 'coordenador') {
-                return redirect()->intended('/coordenador/dashboard');
-            } elseif ($user->role === 'aluno') {
-                return redirect()->intended('/aluno/dashboard');
-            } elseif ($user->role === 'empresa') {
-                return redirect()->intended('/empresa/dashboard');
+            // Verifica se o usuário existe e tem role
+            if ($user) {
+                $role = $user->role;
+                
+                if ($role === 'admin') {
+                    return redirect()->intended('/admin/dashboard');
+                } elseif ($role === 'coordenador') {
+                    return redirect()->intended('/coordenador/dashboard');
+                } elseif ($role === 'aluno') {
+                    return redirect()->intended('/aluno/dashboard');
+                } elseif ($role === 'empresa') {
+                    return redirect()->intended('/empresa/dashboard');
+                }
             }
 
             return redirect()->intended('/dashboard');
@@ -58,6 +69,9 @@ class LoginController
         ])->onlyInput('email');
     }
 
+    /**
+     * Realizar logout
+     */
     public function logout(Request $request)
     {
         Auth::logout();

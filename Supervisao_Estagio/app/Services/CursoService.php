@@ -16,6 +16,7 @@ class CursoService
             ->when(isset($filtros['nome']), function ($q) use ($filtros) {
                 $q->where('nome', 'like', "%{$filtros['nome']}%");
             })
+            ->orderBy('id', 'asc')
             ->paginate(20);
     }
 
@@ -27,14 +28,13 @@ class CursoService
     public function atualizar(Curso $curso, array $dados): Curso
     {
         $curso->update($dados);
-
         return $curso->fresh();
     }
 
     public function inativar(Curso $curso): void
     {
         $curso->update([
-            'ativo' => false
+            'ativo' => !$curso->ativo
         ]);
     }
 

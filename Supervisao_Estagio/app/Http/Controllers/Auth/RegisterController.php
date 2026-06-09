@@ -2,72 +2,30 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Models\User;
-use App\Models\Aluno;
-use App\Models\Coordenador;
-use App\Models\Empresa;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
-class RegisterController
+class RegisterController extends Controller
 {
+    /**
+     * Mostrar formulário de registro - DESABILITADO
+     * Cadastro de usuários só pode ser feito por ADMIN
+     */
     public function showRegistrationForm()
     {
-        return view('auth.register');
+        // Redireciona para login com mensagem
+        return redirect('/login')->withErrors([
+            'email' => 'Cadastro de novos usuários só pode ser feito pelo administrador.',
+        ]);
     }
 
+    /**
+     * Registrar novo usuário - DESABILITADO
+     */
     public function register(Request $request)
     {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'role'     => 'required|in:aluno,empresa',
-            'matricula' => 'required_if:role,aluno|nullable|string|max:20',
-            'cpf'       => 'required_if:role,aluno|nullable|string|size:11',
-            'curso_id'  => 'required_if:role,aluno|nullable|exists:cursos,id,ativo,1',
-            'razao_social' => 'required_if:role,empresa|nullable|string|max:255',
-            'cnpj'      => 'required_if:role,empresa|nullable|string|size:14',
+        return redirect('/login')->withErrors([
+            'email' => 'Cadastro de novos usuários só pode ser feito pelo administrador.',
         ]);
-
-        return DB::transaction(function () use ($request) {
-            $user = User::create([
-                'name'     => $request->name,
-                'email'    => $request->email,
-                'password' => Hash::make($request->password),
-            ]);
-
-            if ($request->role === 'aluno') {
-                $user->assignRole('aluno');
-                
-                Aluno::create([
-                    'user_id'   => $user->id,
-                    'curso_id'  => $request->curso_id,
-                    'matricula' => $request->matricula,
-                    'cpf'       => $request->cpf,
-                    'ativo'     => true,
-                ]);
-            } elseif ($request->role === 'empresa') {
-                $user->assignRole('empresa');
-                
-                Empresa::create([
-                    'user_id'      => $user->id,
-                    'razao_social' => $request->razao_social,
-                    'cnpj'         => $request->cnpj,
-                    'email'        => $request->email,
-                    'status'       => 'ativa',
-                ]);
-            }
-
-            Auth::login($user);
-
-            if ($request->role === 'aluno') {
-                return redirect('/aluno/dashboard');
-            } else {
-                return redirect('/empresa/dashboard');
-            }
-        });
     }
 }

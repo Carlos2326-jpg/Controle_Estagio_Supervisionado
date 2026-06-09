@@ -15,12 +15,14 @@ class StoreCoordenadorRequest extends FormRequest
 
     public function rules(): array
     {
+        $coordenadorId = $this->route('coordenador')?->id;
+
         return [
-            'nome'                   => 'required|string|max:150',
-            'email'                  => 'required|email|max:200|unique:users,email',
+            'name'                   => 'required|string|max:150',
+            'email'                  => 'required|email|max:200|unique:users,email,' . ($coordenadorId ? $this->user_id : 'NULL'),
             'password'               => 'required|string|min:8|confirmed',
             'curso_id'               => 'required|integer|exists:cursos,id,ativo,1',
-            'matricula_institucional' => 'required|string|max:30|unique:coordenadores,matricula_institucional',
+            'matricula_institucional' => 'required|string|max:30|unique:coordenadores,matricula_institucional,' . ($coordenadorId ?? 'NULL'),
             'telefone'               => 'nullable|string|max:20',
             'data_inicio_funcao'     => 'required|date',
             'instituicao_id'         => 'required|exists:instituicoes,id,ativa,1',
@@ -30,7 +32,7 @@ class StoreCoordenadorRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'nome.required'                     => 'O nome é obrigatório.',
+            'name.required'                     => 'O nome é obrigatório.',
             'email.required'                    => 'O e-mail é obrigatório.',
             'email.unique'                      => 'Este e-mail já está cadastrado.',
             'password.required'                 => 'A senha é obrigatória.',

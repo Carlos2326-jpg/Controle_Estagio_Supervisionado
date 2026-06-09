@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Controller;
+use App\Http\Controllers\Controller;
 use App\Models\Empresa;
 use App\Models\Convenio;
 use App\Models\Supervisor;
 use App\Models\SolicitacaoEstagio;
-use App\Models\AvaliacaoSupervisor;  // ← ADICIONE ESTA LINHA!
+use App\Models\AvaliacaoSupervisor;
 use App\Services\EmpresaService;
 use App\Http\Requests\UpdateEmpresaRequest;
 use App\Http\Requests\StoreEmpresaRequest;
@@ -25,7 +25,7 @@ class EmpresaController extends Controller
     public function __construct(EmpresaService $service)
     {
         $this->service = $service;
-        $this->middleware('auth:sanctum');
+        $this->middleware('auth');
     }
 
     public function index(Request $request)
@@ -45,8 +45,7 @@ class EmpresaController extends Controller
     public function show(Empresa $empresa)
     {
         $this->authorize('view', $empresa);
-        $empresa = $this->service->consultar($empresa);
-        return response()->json($empresa);
+        return response()->json($this->service->consultar($empresa));
     }
 
     public function update(UpdateEmpresaRequest $request, Empresa $empresa)
@@ -73,8 +72,9 @@ class EmpresaController extends Controller
     public function convenios(Request $request, Empresa $empresa)
     {
         $this->authorize('view', $empresa);
-        $convenios = $this->service->listarConvenios($empresa, $request->only(['status']));
-        return response()->json($convenios);
+        return response()->json(
+            $this->service->listarConvenios($empresa, $request->only(['status']))
+        );
     }
 
     public function convenioStore(StoreConvenioRequest $request, Empresa $empresa)
@@ -94,8 +94,9 @@ class EmpresaController extends Controller
     public function supervisores(Request $request, Empresa $empresa)
     {
         $this->authorize('view', $empresa);
-        $supervisores = $this->service->listarSupervisores($empresa, $request->only(['status']));
-        return response()->json($supervisores);
+        return response()->json(
+            $this->service->listarSupervisores($empresa, $request->only(['status']))
+        );
     }
 
     public function supervisorStore(StoreSupervisorRequest $request, Empresa $empresa)
@@ -122,22 +123,21 @@ class EmpresaController extends Controller
     public function solicitacoes(Request $request, Empresa $empresa)
     {
         $this->authorize('view', $empresa);
-        $solicitacoes = $this->service->listarSolicitacoesRecebidas($empresa, $request->only(['status']));
-        return response()->json($solicitacoes);
+        return response()->json(
+            $this->service->listarSolicitacoesRecebidas($empresa, $request->only(['status']))
+        );
     }
 
     public function contrato(Empresa $empresa, SolicitacaoEstagio $solicitacao)
     {
         $this->authorize('view', $empresa);
-        $contrato = $this->service->consultarContrato($solicitacao);
-        return response()->json($contrato);
+        return response()->json($this->service->consultarContrato($solicitacao));
     }
 
     public function avaliacoes(Request $request, Empresa $empresa, Supervisor $supervisor)
     {
         $this->authorize('view', $supervisor);
-        $avaliacoes = $this->service->listarAvaliacoes($supervisor);
-        return response()->json($avaliacoes);
+        return response()->json($this->service->listarAvaliacoes($supervisor));
     }
 
     public function avaliacaoStore(StoreAvaliacaoSupervisorRequest $request, Empresa $empresa, Supervisor $supervisor, SolicitacaoEstagio $solicitacao)
@@ -150,7 +150,8 @@ class EmpresaController extends Controller
     public function estagiarios(Request $request, Empresa $empresa)
     {
         $this->authorize('view', $empresa);
-        $estagiarios = $this->service->listarEstagiarios($empresa, $request->only(['supervisor_id']));
-        return response()->json($estagiarios);
+        return response()->json(
+            $this->service->listarEstagiarios($empresa, $request->only(['supervisor_id']))
+        );
     }
 }

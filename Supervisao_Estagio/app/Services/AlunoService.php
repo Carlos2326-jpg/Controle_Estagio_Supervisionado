@@ -107,6 +107,9 @@ class AlunoService
         ];
     }
 
+    /**
+     * RF03 – Solicitar Estágio (UC36)
+     */
     public function solicitarEstagio(Aluno $aluno, array $dados): SolicitacaoEstagio
     {
         // NEG-01: Verifica se já possui solicitação pendente
@@ -119,10 +122,21 @@ class AlunoService
             abort(422, 'Você já possui um estágio em andamento.');
         }
 
-        // Verifica se a empresa possui convênio ativo (NEG-05)
+        // UC36: Verifica se a empresa possui convênio ativo
         $empresa = \App\Models\Empresa::findOrFail($dados['empresa_id']);
         if (!$empresa->possuiConvenioAtivo()) {
             abort(422, 'A empresa selecionada não possui convênio ativo com a instituição.');
+        }
+
+        // UC36: Verifica se o supervisor pertence à empresa
+        $supervisor = \App\Models\Supervisor::findOrFail($dados['supervisor_id']);
+        if ($supervisor->empresa_id != $empresa->id) {
+            abort(422, 'O supervisor informado não pertence à empresa selecionada.');
+        }
+
+        // UC36: Verifica carga horária semanal dentro do limite
+        if ($dados['carga_horaria_semanal'] > 30) {
+            abort(422, 'A carga horária semanal não pode exceder 30 horas para estagiários.');
         }
 
         $solicitacao = SolicitacaoEstagio::create([
@@ -137,6 +151,14 @@ class AlunoService
             'descricao_atividades'  => $dados['descricao_atividades'],
             'status'                => 'pendente',
         ]);
+
+        // Disparar notificação para o coordenador
+        $coordenadores = \App\Models\Coordenador::where('curso_id', $aluno->curso_id)->get();
+        foreach ($coordenadores as $coordenador) {
+            $coordenador->user->notify(new \App\Notifications\AlertaCoordenadorNotification(
+                "Nova solicitação de estágio de {$aluno->user->name} aguardando análise."
+            ));
+        }
 
         Log::info("Solicitação {$solicitacao->id} criada pelo aluno {$aluno->id}.");
 
@@ -299,20 +321,51 @@ class AlunoService
     public function enviarDocumento(Aluno $aluno, array $dados): Documento
     {
         $arquivo = $dados['arquivo'];
-        $caminho = $arquivo->store("documentos/aluno_{$aluno->id}", 'private');
+
+        // Validar MIME type real (não apenas extensão)
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $arquivo->getRealPath());
+        finfo_close($finfo);
+
+        $allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
+        if (!in_array($mimeType, $allowedMimes)) {
+            throw new \Exception('Tipo de arquivo não permitido. Envie PDF, JPG ou PNG.');
+        }
+
+        // Sanitizar nome do arquivo
+        $originalName = pathinfo($arquivo->getClientOriginalName(), PATHINFO_FILENAME);
+        $sanitizedName = preg_replace('/[^a-zA-Z0-9áéíóúãõç\s-]/u', '', $originalName);
+        $sanitizedName = str_replace(' ', '_', $sanitizedName);
+        $extension = $arquivo->getClientOriginalExtension();
+        $fileName = $sanitizedName . '_' . time() . '.' . $extension;
+
+        // Armazenar fora da pasta pública
+        $caminho = $arquivo->storeAs(
+            "documentos/aluno_{$aluno->id}",
+            $fileName,
+            'private' // Disco privado, fora do public
+        );
+
+        if (!$caminho) {
+            throw new \Exception('Erro ao armazenar o arquivo.');
+        }
 
         $documento = Documento::create([
-            'aluno_id'               => $aluno->id,
+            'aluno_id' => $aluno->id,
             'solicitacao_estagio_id' => $dados['solicitacao_estagio_id'] ?? null,
-            'nome'                   => $dados['nome'] ?? $arquivo->getClientOriginalName(),
-            'tipo'                   => $dados['tipo'],
-            'caminho_arquivo'        => $caminho,
-            'mime_type'              => $arquivo->getMimeType(),
-            'tamanho_bytes'          => $arquivo->getSize(),
-            'status'                 => 'pendente',
+            'nome' => $dados['nome'] ?? $originalName,
+            'tipo' => $dados['tipo'],
+            'caminho_arquivo' => $caminho,
+            'mime_type' => $mimeType,
+            'tamanho_bytes' => $arquivo->getSize(),
+            'status' => 'pendente',
         ]);
 
-        Log::info("Documento {$documento->id} enviado pelo aluno {$aluno->id}.");
+        Log::info("Documento {$documento->id} enviado pelo aluno {$aluno->id}", [
+            'tamanho' => $arquivo->getSize(),
+            'mime_type' => $mimeType,
+            'nome_original' => $originalName
+        ]);
 
         return $documento;
     }

@@ -6,6 +6,9 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 abstract class Controller extends BaseController
 {
@@ -17,14 +20,6 @@ abstract class Controller extends BaseController
     public function __construct()
     {
         // Middleware pode ser definido aqui ou nos controllers filhos
-    }
-
-    /**
-     * Executa antes de qualquer ação do controller (opcional)
-     */
-    protected function callAction($method, $parameters)
-    {
-        return parent::callAction($method, $parameters);
     }
 
     /**
@@ -70,7 +65,6 @@ abstract class Controller extends BaseController
 
     /**
      * Valida se o usuário tem permissão para acessar o recurso
-     * Este método é um wrapper para o authorize() do Laravel
      */
     protected function authorizeAction(string $ability, $arguments = [])
     {
@@ -82,7 +76,7 @@ abstract class Controller extends BaseController
      */
     protected function checkAuth(): bool
     {
-        return auth()->check();
+        return Auth::check();
     }
 
     /**
@@ -90,7 +84,7 @@ abstract class Controller extends BaseController
      */
     protected function getAuthenticatedUser()
     {
-        return auth()->user();
+        return Auth::user();
     }
 
     /**
@@ -98,17 +92,15 @@ abstract class Controller extends BaseController
      */
     protected function userHasRole(string $role): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
         if (!$user) {
             return false;
         }
         
-        // Verifica se o método hasRole existe no model User
         if (method_exists($user, 'hasRole')) {
             return $user->hasRole($role);
         }
         
-        // Fallback: verifica o campo role diretamente
         return isset($user->role) && $user->role === $role;
     }
 
@@ -117,18 +109,56 @@ abstract class Controller extends BaseController
      */
     protected function userHasAnyRole(array $roles): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
         if (!$user) {
             return false;
         }
         
-        // Verifica se o método hasAnyRole existe no model User
         if (method_exists($user, 'hasAnyRole')) {
             return $user->hasAnyRole($roles);
         }
         
-        // Fallback: verifica o campo role diretamente
         return isset($user->role) && in_array($user->role, $roles);
+    }
+
+    /**
+     * Verifica se o usuário autenticado é o proprietário do recurso Aluno
+     */
+    protected function isOwnAluno(int $alunoId): bool
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return false;
+        }
+        
+        // Se for admin ou coordenador, permite acesso
+        if ($this->userHasAnyRole(['admin', 'coordenador'])) {
+            return true;
+        }
+        
+        // Verifica se o aluno pertence ao usuário autenticado
+        $aluno = \App\Models\Aluno::where('user_id', $user->id)->first();
+        return $aluno && $aluno->id === $alunoId;
+    }
+
+    /**
+     * Verifica se o usuário autenticado é o proprietário do recurso Empresa
+     */
+    protected function isOwnEmpresa(int $empresaId): bool
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return false;
+        }
+        
+        // Se for admin, permite acesso
+        if ($user->role === 'admin') {
+            return true;
+        }
+        
+        // Verifica se a empresa pertence ao usuário autenticado
+        $empresa = \App\Models\Empresa::where('user_id', $user->id)->first();
+        return $empresa && $empresa->id === $empresaId;
     }
 
     /**
@@ -144,7 +174,7 @@ abstract class Controller extends BaseController
      */
     protected function requireAuth(array $except = [])
     {
-        $this->middleware('auth:sanctum')->except($except);
+        $this->middleware('auth')->except($except);
     }
 
     /**
@@ -152,7 +182,7 @@ abstract class Controller extends BaseController
      */
     protected function requireAdmin(array $except = [])
     {
-        $this->middleware('auth:sanctum')->except($except);
+        $this->middleware('auth')->except($except);
         $this->middleware('role:admin')->except($except);
     }
 
@@ -161,7 +191,7 @@ abstract class Controller extends BaseController
      */
     protected function requireCoordenador(array $except = [])
     {
-        $this->middleware('auth:sanctum')->except($except);
+        $this->middleware('auth')->except($except);
         $this->middleware('role:coordenador')->except($except);
     }
 
@@ -170,7 +200,7 @@ abstract class Controller extends BaseController
      */
     protected function requireAluno(array $except = [])
     {
-        $this->middleware('auth:sanctum')->except($except);
+        $this->middleware('auth')->except($except);
         $this->middleware('role:aluno')->except($except);
     }
 
@@ -179,7 +209,7 @@ abstract class Controller extends BaseController
      */
     protected function requireEmpresa(array $except = [])
     {
-        $this->middleware('auth:sanctum')->except($except);
+        $this->middleware('auth')->except($except);
         $this->middleware('role:empresa')->except($except);
     }
 
@@ -200,10 +230,11 @@ abstract class Controller extends BaseController
      */
     protected function logAction(string $action, array $data = [])
     {
-        $user = auth()->user();
-        \Illuminate\Support\Facades\Log::info('Ação do usuário', [
+        $user = Auth::user();
+        Log::info('Ação do usuário', [
             'user_id' => $user?->id,
             'user_email' => $user?->email,
+            'user_role' => $user?->role,
             'action' => $action,
             'data' => $data,
             'ip' => request()->ip(),

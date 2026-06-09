@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Controller;
 use App\Models\Aluno;
 use App\Models\AtividadeEstagio;
 use App\Models\Contrato;
@@ -16,6 +15,7 @@ use App\Http\Requests\StoreAtividadeEstagioRequest;
 use App\Http\Requests\StoreDocumentoRequest;
 use App\Services\AlunoService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AlunoController extends Controller
 {
@@ -24,12 +24,25 @@ class AlunoController extends Controller
     public function __construct(AlunoService $service)
     {
         $this->service = $service;
-        $this->middleware('auth:sanctum');
-        $this->authorizeResource(Aluno::class, 'aluno');
+    }
+
+    /**
+     * Verifica se o usuário autenticado é o próprio aluno
+     */
+    private function isOwnAluno(int $alunoId): bool
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return false;
+        }
+        
+        $aluno = Aluno::where('user_id', $user->id)->first();
+        return $aluno && $aluno->id === $alunoId;
     }
 
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Aluno::class);
         return response()->json(
             $this->service->listar($request->only(['curso_id', 'situacao', 'ativo', 'busca']))
         );
@@ -37,6 +50,7 @@ class AlunoController extends Controller
 
     public function store(StoreAlunoRequest $request)
     {
+        $this->authorize('create', Aluno::class);
         return response()->json(
             $this->service->cadastrar($request->validated()),
             201
@@ -61,7 +75,7 @@ class AlunoController extends Controller
 
     public function inativar(Aluno $aluno)
     {
-        $this->authorize('inativar', $aluno);
+        $this->authorize('update', $aluno);
         $this->service->inativar($aluno);
         return response()->json(['message' => 'Aluno inativado com sucesso.']);
     }
@@ -76,7 +90,11 @@ class AlunoController extends Controller
 
     public function solicitarEstagio(StoreSolicitacaoEstagioRequest $request, Aluno $aluno)
     {
-        $this->authorize('solicitarEstagio', $aluno);
+        // Garante que o aluno autenticado só solicita para si mesmo
+        if (!$this->isOwnAluno($aluno->id) && !$this->userHasAnyRole(['admin', 'coordenador'])) {
+            abort(403, 'Você não pode criar solicitações para outro aluno.');
+        }
+        
         return response()->json(
             $this->service->solicitarEstagio($aluno, $request->validated()),
             201
@@ -93,7 +111,12 @@ class AlunoController extends Controller
 
     public function cancelarSolicitacao(Aluno $aluno, SolicitacaoEstagio $solicitacao)
     {
-        $this->authorize('cancelar', $solicitacao);
+        // Verifica que a solicitação pertence ao aluno
+        if ($solicitacao->aluno_id !== $aluno->id) {
+            abort(403, 'Esta solicitação não pertence a este aluno.');
+        }
+        
+        $this->authorize('view', $aluno);
         $this->service->cancelarSolicitacao($aluno, $solicitacao);
         return response()->json(['message' => 'Solicitação cancelada com sucesso.']);
     }
@@ -108,7 +131,12 @@ class AlunoController extends Controller
 
     public function visualizarContrato(Aluno $aluno, Contrato $contrato)
     {
-        $this->authorize('view', $contrato);
+        // Verifica que o contrato pertence ao aluno
+        if ($contrato->aluno_id !== $aluno->id) {
+            abort(403, 'Acesso negado.');
+        }
+        
+        $this->authorize('view', $aluno);
         return response()->json(
             $this->service->visualizarContrato($aluno, $contrato)
         );
@@ -126,7 +154,7 @@ class AlunoController extends Controller
 
     public function registrarAtividade(StoreAtividadeEstagioRequest $request, Aluno $aluno)
     {
-        $this->authorize('create', AtividadeEstagio::class);
+        $this->authorize('view', $aluno);
         return response()->json(
             $this->service->registrarAtividade($aluno, $request->validated()),
             201
@@ -135,7 +163,16 @@ class AlunoController extends Controller
 
     public function atualizarAtividade(UpdateAtividadeEstagioRequest $request, Aluno $aluno, AtividadeEstagio $atividade)
     {
-        $this->authorize('update', $atividade);
+        // Garante que a atividade pertence ao aluno
+        if ($atividade->aluno_id !== $aluno->id) {
+            abort(403, 'Esta atividade não pertence a este aluno.');
+        }
+        
+        if ($atividade->validado_supervisor) {
+            abort(422, 'Não é possível editar uma atividade já validada pelo supervisor.');
+        }
+        
+        $this->authorize('view', $aluno);
         return response()->json(
             $this->service->atualizarAtividade($aluno, $atividade, $request->validated())
         );
@@ -143,14 +180,22 @@ class AlunoController extends Controller
 
     public function excluirAtividade(Aluno $aluno, AtividadeEstagio $atividade)
     {
-        $this->authorize('delete', $atividade);
+        if ($atividade->aluno_id !== $aluno->id) {
+            abort(403, 'Esta atividade não pertence a este aluno.');
+        }
+        
+        if ($atividade->validado_supervisor) {
+            abort(422, 'Não é possível excluir uma atividade já validada.');
+        }
+        
+        $this->authorize('view', $aluno);
         $this->service->excluirAtividade($aluno, $atividade);
         return response()->json(['message' => 'Registro de atividade excluído com sucesso.']);
     }
 
     public function enviarDocumento(StoreDocumentoRequest $request, Aluno $aluno)
     {
-        $this->authorize('create', Documento::class);
+        $this->authorize('view', $aluno);
         return response()->json(
             $this->service->enviarDocumento($aluno, $request->validated()),
             201
@@ -184,13 +229,17 @@ class AlunoController extends Controller
     public function marcarAlertaLido(Request $request, Aluno $aluno)
     {
         $this->authorize('view', $aluno);
-        $request->validate(['notification_id' => 'required|string']);
         
-        $notification = $aluno->user->notifications()->where('id', $request->notification_id)->first();
+        $request->validate(['notification_id' => 'required|string']);
+
+        $notification = $aluno->user->notifications()
+            ->where('id', $request->notification_id)
+            ->first();
+
         if (!$notification) {
             return response()->json(['message' => 'Notificação não encontrada.'], 404);
         }
-        
+
         $this->service->marcarAlertaLido($aluno, $request->notification_id);
         return response()->json(['message' => 'Alerta marcado como lido.']);
     }

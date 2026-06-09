@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Controller;
 use App\Models\Curso;
 use App\Services\CursoService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CursoController extends Controller
 {
@@ -13,25 +13,46 @@ class CursoController extends Controller
         protected CursoService $service
     ) {}
 
-    // Listar cursos
+    /**
+     * Listar cursos - Permitido para admin e coordenador
+     */
     public function index(Request $request)
     {
+        $user = Auth::user();
+        if (!$user || !in_array($user->role, ['admin', 'coordenador'])) {
+            abort(403, 'Acesso não autorizado.');
+        }
+        
         $cursos = $this->service->listar(
             $request->only(['ativo', 'nome'])
         );
 
-        return view('cursos.index', compact('cursos'));
+        return response()->json($cursos);
     }
 
-    // Formulário de cadastro
+    /**
+     * Formulário de cadastro - Apenas admin
+     */
     public function create()
     {
+        $user = Auth::user();
+        if (!$user || $user->role !== 'admin') {
+            abort(403, 'Acesso não autorizado.');
+        }
+        
         return view('cursos.create');
     }
 
-    // Salvar curso
+    /**
+     * Salvar curso - Apenas admin
+     */
     public function store(Request $request)
     {
+        $user = Auth::user();
+        if (!$user || $user->role !== 'admin') {
+            abort(403, 'Acesso não autorizado.');
+        }
+        
         $request->validate([
             'nome' => 'required|string|max:150',
             'codigo' => 'required|string|max:20|unique:cursos,codigo',
@@ -39,30 +60,49 @@ class CursoController extends Controller
             'modalidade' => 'required|in:Presencial,EAD,Hibrido',
         ]);
 
-        $this->service->cadastrar($request->all());
+        $curso = $this->service->cadastrar($request->all());
 
-        return redirect()
-            ->route('cursos.index')
-            ->with('success', 'Curso cadastrado com sucesso!');
+        return response()->json($curso, 201);
     }
 
-    // Detalhes
+    /**
+     * Detalhes do curso - Permitido para admin e coordenador
+     */
     public function show(Curso $curso)
     {
+        $user = Auth::user();
+        if (!$user || !in_array($user->role, ['admin', 'coordenador'])) {
+            abort(403, 'Acesso não autorizado.');
+        }
+        
         $curso = $this->service->detalhes($curso);
 
-        return view('cursos.show', compact('curso'));
+        return response()->json($curso);
     }
 
-    // Formulário de edição
+    /**
+     * Formulário de edição - Apenas admin
+     */
     public function edit(Curso $curso)
     {
+        $user = Auth::user();
+        if (!$user || $user->role !== 'admin') {
+            abort(403, 'Acesso não autorizado.');
+        }
+        
         return view('cursos.edit', compact('curso'));
     }
 
-    // Atualizar
+    /**
+     * Atualizar curso - Apenas admin
+     */
     public function update(Request $request, Curso $curso)
     {
+        $user = Auth::user();
+        if (!$user || $user->role !== 'admin') {
+            abort(403, 'Acesso não autorizado.');
+        }
+        
         $request->validate([
             'nome' => 'required|string|max:150',
             'codigo' => 'required|string|max:20|unique:cursos,codigo,' . $curso->id,
@@ -70,23 +110,26 @@ class CursoController extends Controller
             'modalidade' => 'required|in:Presencial,EAD,Hibrido',
         ]);
 
-        $this->service->atualizar(
-            $curso,
-            $request->all()
-        );
+        $this->service->atualizar($curso, $request->all());
 
-        return redirect()
-            ->route('cursos.index')
-            ->with('success', 'Curso atualizado com sucesso!');
+        return response()->json(['message' => 'Curso atualizado com sucesso!']);
     }
 
-    // Inativar
+    /**
+     * Inativar/Ativar curso - Apenas admin
+     */
     public function inativar(Curso $curso)
     {
+        $user = Auth::user();
+        if (!$user || $user->role !== 'admin') {
+            abort(403, 'Acesso não autorizado.');
+        }
+        
         $this->service->inativar($curso);
 
-        return redirect()
-            ->route('cursos.index')
-            ->with('success', 'Curso inativado com sucesso!');
+        return response()->json([
+            'message' => $curso->ativo ? 'Curso ativado com sucesso!' : 'Curso inativado com sucesso!',
+            'ativo' => $curso->ativo
+        ]);
     }
 }

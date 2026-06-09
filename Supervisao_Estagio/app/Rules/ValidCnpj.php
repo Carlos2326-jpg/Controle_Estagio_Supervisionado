@@ -14,29 +14,36 @@ class ValidCnpj implements Rule
             return false;
         }
         
+        // Verifica se todos os dígitos são iguais
         if (preg_match('/(\d)\1{13}/', $cnpj)) {
             return false;
         }
         
-        $sum = 0;
-        $weight = 5;
+        // Calcula o primeiro dígito verificador
+        $soma = 0;
+        $peso = 5;
         for ($i = 0; $i < 12; $i++) {
-            $sum += $cnpj[$i] * $weight;
-            $weight = ($weight == 2) ? 9 : $weight - 1;
+            $soma += $cnpj[$i] * $peso;
+            $peso = ($peso == 2) ? 9 : $peso - 1;
         }
-        $remainder = $sum % 11;
-        $digit1 = ($remainder < 2) ? 0 : 11 - $remainder;
+        $resto = $soma % 11;
+        $dv1 = ($resto < 2) ? 0 : 11 - $resto;
         
-        $sum = 0;
-        $weight = 6;
+        if ($cnpj[12] != $dv1) {
+            return false;
+        }
+        
+        // Calcula o segundo dígito verificador
+        $soma = 0;
+        $peso = 6;
         for ($i = 0; $i < 13; $i++) {
-            $sum += $cnpj[$i] * $weight;
-            $weight = ($weight == 2) ? 9 : $weight - 1;
+            $soma += $cnpj[$i] * $peso;
+            $peso = ($peso == 2) ? 9 : $peso - 1;
         }
-        $remainder = $sum % 11;
-        $digit2 = ($remainder < 2) ? 0 : 11 - $remainder;
+        $resto = $soma % 11;
+        $dv2 = ($resto < 2) ? 0 : 11 - $resto;
         
-        return $cnpj[12] == $digit1 && $cnpj[13] == $digit2;
+        return $cnpj[13] == $dv2;
     }
 
     public function message()

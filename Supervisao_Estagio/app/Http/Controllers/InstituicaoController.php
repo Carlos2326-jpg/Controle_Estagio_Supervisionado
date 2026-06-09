@@ -1,12 +1,14 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use App\Http\Controllers\Controller;
 use App\Models\Instituicao;
 use App\Http\Requests\StoreInstituicaoRequest;
 use App\Services\InstituicaoService;
 use Illuminate\Http\Request;
 
-class InstituicaoController
+class InstituicaoController extends Controller
 {
     protected InstituicaoService $service;
 
@@ -15,60 +17,39 @@ class InstituicaoController
         $this->service = $service;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | RF38 – GERENCIAR INSTITUIÇÃO
-    |--------------------------------------------------------------------------
-    */
-
     public function index(Request $request)
     {
         $instituicoes = $this->service->listar(
             $request->only(['ativa', 'cidade', 'estado', 'busca'])
         );
-
-        return view('instituicoes.index', compact('instituicoes'));
-    }
-
-    public function create()
-    {
-        return view('instituicoes.create');
+        return response()->json($instituicoes);
     }
 
     public function store(StoreInstituicaoRequest $request)
     {
-        $this->service->cadastrar($request->validated());
-
-        return redirect()->route('instituicoes.index')
-            ->with('success', 'Instituição cadastrada com sucesso.');
+        $instituicao = $this->service->cadastrar($request->validated());
+        return response()->json($instituicao, 201);
     }
 
     public function show(Instituicao $instituicao)
     {
-        $detalhes = $this->service->detalhes($instituicao);
-
-        return view('instituicoes.show', compact('detalhes', 'instituicao'));
-    }
-
-    public function edit(Instituicao $instituicao)
-    {
-        return view('instituicoes.edit', compact('instituicao'));
+        return response()->json($instituicao);
     }
 
     public function update(StoreInstituicaoRequest $request, Instituicao $instituicao)
     {
         $this->service->atualizar($instituicao, $request->validated());
-
-        return redirect()->route('instituicoes.index')
-            ->with('success', 'Instituição atualizada com sucesso.');
+        return response()->json(['message' => 'Instituição atualizada com sucesso.']);
     }
 
     public function toggleAtiva(Instituicao $instituicao)
     {
-        $this->service->toggleAtiva($instituicao);
+        $instituicao->update(['ativa' => !$instituicao->ativa]);
 
-        return redirect()->route('instituicoes.index')
-            ->with('success', 'Status da instituição atualizado com sucesso.');
+        return response()->json([
+            'message' => 'Status da instituição atualizado com sucesso.',
+            'ativa' => $instituicao->ativa
+        ]);
     }
 
     /*
@@ -79,6 +60,7 @@ class InstituicaoController
 
     public function vincularCurso(Request $request, Instituicao $instituicao)
     {
+        $this->authorize('update', $instituicao);
         $request->validate(['curso_id' => 'required|exists:cursos,id']);
         $this->service->vincularCurso($instituicao, $request->input('curso_id'));
 
@@ -87,6 +69,7 @@ class InstituicaoController
 
     public function desvincularCurso(Instituicao $instituicao, int $cursoId)
     {
+        $this->authorize('update', $instituicao);
         $this->service->desvincularCurso($instituicao, $cursoId);
 
         return redirect()->back()->with('success', 'Curso desvinculado com sucesso.');
@@ -100,6 +83,7 @@ class InstituicaoController
 
     public function vincularCoordenador(Request $request, Instituicao $instituicao)
     {
+        $this->authorize('update', $instituicao);
         $request->validate(['coordenador_id' => 'required|exists:coordenadores,id']);
         $this->service->vincularCoordenador($instituicao, $request->input('coordenador_id'));
 
@@ -108,6 +92,7 @@ class InstituicaoController
 
     public function desvincularCoordenador(Instituicao $instituicao, int $coordenadorId)
     {
+        $this->authorize('update', $instituicao);
         $this->service->desvincularCoordenador($instituicao, $coordenadorId);
 
         return redirect()->back()->with('success', 'Coordenador desvinculado com sucesso.');
@@ -121,6 +106,7 @@ class InstituicaoController
 
     public function listarCursos(Instituicao $instituicao)
     {
+        $this->authorize('view', $instituicao);
         $cursos = $this->service->listarCursos($instituicao);
 
         return view('instituicoes.cursos', compact('instituicao', 'cursos'));
@@ -128,6 +114,7 @@ class InstituicaoController
 
     public function listarCoordenadores(Instituicao $instituicao)
     {
+        $this->authorize('view', $instituicao);
         $coordenadores = $this->service->listarCoordenadores($instituicao);
 
         return view('instituicoes.coordenadores', compact('instituicao', 'coordenadores'));
@@ -135,6 +122,7 @@ class InstituicaoController
 
     public function estruturaAcademica(Instituicao $instituicao)
     {
+        $this->authorize('view', $instituicao);
         $estrutura = $this->service->estruturaAcademica($instituicao);
 
         return view('instituicoes.estrutura', compact('instituicao', 'estrutura'));
@@ -148,6 +136,7 @@ class InstituicaoController
 
     public function relatorio(Instituicao $instituicao)
     {
+        $this->authorize('view', $instituicao);
         $relatorio = $this->service->gerarRelatorio($instituicao);
 
         return view('instituicoes.relatorio', compact('instituicao', 'relatorio'));
@@ -155,6 +144,7 @@ class InstituicaoController
 
     public function exportar(Request $request, Instituicao $instituicao)
     {
+        $this->authorize('view', $instituicao);
         $request->validate(['formato' => 'required|in:csv,pdf']);
 
         return $this->service->exportar($instituicao, $request->input('formato'));

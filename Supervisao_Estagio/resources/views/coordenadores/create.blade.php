@@ -1,53 +1,73 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
-    <title>Novo Coordenador</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo Coordenador - Sistema de Estágios</title>
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
-
 <body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h1>Novo Coordenador</h1>
+                <a href="{{ route('coordenadores.index') }}" class="btn btn-secundario">← Voltar</a>
+            </div>
 
-    <h1>Novo Coordenador</h1>
+            <form method="POST" action="{{ route('coordenadores.store') }}">
+                @csrf
 
-    <form method="POST" action="/coordenadores">
-        @csrf
+                <div class="form-group">
+                    <label>Nome *</label>
+                    <input type="text" name="nome" value="{{ old('nome') }}" required>
+                </div>
 
-        <div class="grupo">
-            <label>Nome</label>
-            <input type="text" name="nome" required>
+                <div class="form-group">
+                    <label>E-mail *</label>
+                    <input type="email" name="email" value="{{ old('email') }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Curso</label>
+                    <select name="curso_id" class="form-control">
+                        <option value="">Selecione um curso</option>
+                        @foreach($cursos as $curso)
+                            <option value="{{ $curso->id }}" {{ old('curso_id') == $curso->id ? 'selected' : '' }}>
+                                {{ $curso->nome }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Instituição *</label>
+                    <select name="instituicao_id" class="form-control" required>
+                        <option value="">Selecione uma instituição</option>
+                        @foreach ($instituicoes as $instituicao)
+                            <option value="{{ $instituicao->id }}" {{ old('instituicao_id') == $instituicao->id ? 'selected' : '' }}>
+                                {{ $instituicao->nome_instituicao }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Senha *</label>
+                    <input type="password" name="password" required>
+                    <small class="dica">Mínimo 8 caracteres</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Confirmar Senha *</label>
+                    <input type="password" name="password_confirmation" required>
+                </div>
+
+                <div class="rodape">
+                    <button type="submit" class="btn btn-primario">Salvar</button>
+                    <a href="{{ route('coordenadores.index') }}" class="btn btn-secundario">Cancelar</a>
+                </div>
+            </form>
         </div>
-
-        <div class="grupo">
-            <label>E-mail</label>
-            <input type="email" name="email" required>
-        </div>
-
-        <div class="grupo">
-            <label>Curso ID</label>
-            <input type="number" name="curso_id">
-        </div>
-        <label>Instituição</label>
-
-        <select name="instituicao_id" class="form-control">
-            @foreach ($instituicoes as $instituicao)
-                <option value="{{ $instituicao->id }}">
-                    {{ $instituicao->nome }}
-                </option>
-            @endforeach
-        </select>
-
-        <div class="rodape">
-            <button type="submit" class="btn btn-primario">
-                Salvar
-            </button>
-
-            <a href="/coordenadores" class="btn btn-secundario">
-                Cancelar
-            </a>
-        </div>
-    </form>
-
+    </div>
 </body>
-
 </html>

@@ -77,9 +77,12 @@ class InstituicaoService
      */
     public function toggleAtiva(Instituicao $instituicao): Instituicao
     {
-        // RNF15 – Impede desativação lógica se houver vínculos ativos
-        if ($instituicao->ativa && $instituicao->possuiVinculosAtivos()) {
-            abort(422, 'Não é possível desativar uma instituição com cursos ou coordenadores vinculados.');
+        // Apenas loga os vínculos, mas não impede a desativação
+        if ($instituicao->ativa) {
+            $vinculosMessage = $instituicao->getVinculosMessage();
+            Log::info("Desativando instituição {$instituicao->id} ({$instituicao->sigla})", [
+                'vinculos' => $vinculosMessage
+            ]);
         }
 
         $instituicao->update(['ativa' => !$instituicao->ativa]);

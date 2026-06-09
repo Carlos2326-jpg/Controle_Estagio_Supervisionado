@@ -17,6 +17,13 @@ use Illuminate\Support\Facades\Log;
 
 class CoordenadorService
 {
+    protected $contratoService;
+
+    public function __construct(ContratoService $contratoService)
+    {
+        $this->contratoService = $contratoService;
+    }
+
     public function listar(array $filtros = []): LengthAwarePaginator
     {
         $query = Coordenador::with(['user', 'curso'])
@@ -85,9 +92,9 @@ class CoordenadorService
         if (!$coordenador->curso_id) {
             abort(422, 'Coordenador não vinculado a nenhum curso.');
         }
-        
+
         $curso = $coordenador->curso()->with(['alunos', 'coordenadores'])->first();
-        
+
         if (!$curso) {
             abort(422, 'Curso não encontrado para este coordenador.');
         }
@@ -115,15 +122,42 @@ class CoordenadorService
 
     public function aprovarSolicitacao(Coordenador $coordenador, SolicitacaoEstagio $solicitacao, ?string $justificativa = null): void
     {
-        // NEG-02: Verifica escopo - solicitação deve pertencer ao curso do coordenador
+        // NEG-02: Verifica escopo
         if ($solicitacao->curso_id !== $coordenador->curso_id) {
             abort(403, 'Você não pode aprovar solicitações de outros cursos.');
         }
-        
-        $this->analisarSolicitacao($coordenador, $solicitacao, 'aprovada', $justificativa);
-        
-        // Atualiza situação do aluno
-        $solicitacao->aluno->update(['situacao_estagio' => 'em_andamento']);
+
+        DB::transaction(function () use ($coordenador, $solicitacao, $justificativa) {
+            $solicitacao->update(['status' => 'aprovada']);
+
+            // Registrar histórico
+            HistoricoAnalise::create([
+                'solicitacao_estagio_id' => $solicitacao->id,
+                'coordenador_id'         => $coordenador->id,
+                'decisao'                => 'aprovada',
+                'justificativa'          => $justificativa,
+                'analisado_em'           => now(),
+            ]);
+
+            // UC41: Gerar contrato automaticamente
+            $contrato = $this->contratoService->gerarContrato($solicitacao);
+
+            // Atualizar situação do aluno
+            $solicitacao->aluno->update(['situacao_estagio' => 'em_andamento']);
+
+            // Notificar aluno e empresa
+            $solicitacao->aluno->user->notify(
+                new \App\Notifications\AlertaCoordenadorNotification(
+                    "Sua solicitação de estágio foi APROVADA. Contrato gerado: {$contrato->numero_contrato}"
+                )
+            );
+
+            $solicitacao->empresa->user?->notify(
+                new \App\Notifications\AlertaCoordenadorNotification(
+                    "Solicitação de estágio de {$solicitacao->aluno->user->name} foi APROVADA"
+                )
+            );
+        });
     }
 
     public function reprovarSolicitacao(Coordenador $coordenador, SolicitacaoEstagio $solicitacao, string $justificativa): void
@@ -132,7 +166,7 @@ class CoordenadorService
         if ($solicitacao->curso_id !== $coordenador->curso_id) {
             abort(403, 'Você não pode reprovar solicitações de outros cursos.');
         }
-        
+
         $this->analisarSolicitacao($coordenador, $solicitacao, 'reprovada', $justificativa);
     }
 
@@ -285,17 +319,17 @@ class CoordenadorService
             $avaliacaoExistente = Avaliacao::where('solicitacao_estagio_id', $solicitacao->id)
                 ->where('tipo', 'final')
                 ->exists();
-                
+
             if ($avaliacaoExistente) {
                 abort(422, 'Já existe uma avaliação final registrada para este estágio.');
             }
-            
+
             // NEG-08: Verifica se contrato está encerrado para avaliação final
             if ($solicitacao->data_fim_prevista->gt(now())) {
                 abort(422, 'A avaliação final só pode ser registrada após o término do estágio.');
             }
         }
-        
+
         $avaliacao = Avaliacao::create([
             'aluno_id'               => $solicitacao->aluno_id,
             'coordenador_id'         => $coordenador->id,

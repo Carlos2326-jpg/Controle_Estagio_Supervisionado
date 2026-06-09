@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\Curso;
 use App\Models\Aluno;
 use Illuminate\Http\Request;
 
-class MatriculaController
+class MatriculaController extends Controller
 {
+    public function __construct()
+    {
+        // Proteção garantida pelo grupo de rotas; autorização fina aqui
+    }
+
     /*
     |--------------------------------------------------------------------------
     | RF12 – LISTAR ALUNOS MATRICULADOS NO CURSO
@@ -16,6 +22,9 @@ class MatriculaController
 
     public function index(Request $request, Curso $curso)
     {
+        // Apenas admin e coordenador podem listar alunos matriculados
+        $this->authorize('viewAny', Aluno::class);
+
         $alunos = Aluno::with(['user'])
             ->where('curso_id', $curso->id)
             ->when(
@@ -36,15 +45,20 @@ class MatriculaController
 
     public function buscar(Request $request, Curso $curso)
     {
+        $this->authorize('viewAny', Aluno::class);
+
         $request->validate([
-            'busca' => 'required|string'
+            'busca' => 'required|string|max:100',
         ]);
+
+        // Usa validated() para evitar uso de $request->all()
+        $busca = $request->input('busca');
 
         $alunos = Aluno::with(['user'])
             ->where('curso_id', $curso->id)
-            ->where(function ($q) use ($request) {
-                $q->where('matricula', $request->busca)
-                  ->orWhere('cpf', $request->busca);
+            ->where(function ($q) use ($busca) {
+                $q->where('matricula', $busca)
+                  ->orWhere('cpf', $busca);
             })
             ->paginate(20);
 
@@ -59,8 +73,11 @@ class MatriculaController
 
     public function historico(Curso $curso, Aluno $aluno)
     {
+        $this->authorize('view', $aluno);
+
+        // Verifica que o aluno pertence ao curso da rota
         if ($aluno->curso_id !== $curso->id) {
-            abort(403, 'Aluno não pertence a este curso.');
+            abort(403, 'Este aluno não pertence ao curso informado.');
         }
 
         $aluno->load([
@@ -80,13 +97,12 @@ class MatriculaController
 
     public function alunosSemHoras(Curso $curso)
     {
+        $this->authorize('viewAny', Aluno::class);
+
         $alunos = Aluno::with(['user'])
             ->where('curso_id', $curso->id)
             ->where('ativo', true)
-            ->whereRaw(
-                'carga_horaria_cumprida < ?',
-                [$curso->carga_horaria_estagio]
-            )
+            ->whereRaw('carga_horaria_cumprida < ?', [$curso->carga_horaria_estagio])
             ->orderBy('created_at', 'asc')
             ->paginate(20);
 
